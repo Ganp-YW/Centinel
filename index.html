@@ -1,32 +1,38 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="../centinel/public/favicon.svg" />
-    <link href="../centinel/nod" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>centinel</title>
-  </head>
-  <body>
 
-    <h1>Centinel</h1>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../centinel/public/favicon.svg" />
+  <link rel="stylesheet" href="src/CSS/output.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>centinel</title>
+</head>
 
-    <form action="/centinel/src/PHP/login.php" method="post">
+<body class="grid place-items-center p-3 w-dvw h-dvh">
+
+
+
+  <form action="/centinel/src/PHP/login.php" method="post"
+    class="grid grid-rows-3 items-center place-items-center gap-3 w-100">
+    <h1 class="text-xl">Centinel</h1>
+
+    <div class="grid grid-rows-2 gap-2">
 
       <label for="usuario_correo">Usuario / Correo:
-        <input type="text" name="usuario_correo" id="usuarioCorreo">
-      </label> <br>
+        <input type="text" name="usuario_correo" id="usuarioCorreo" class="border rounded-full px-3 text-sm">
+      </label>
 
-      <label for="password">Contraseña: 
+      <label for="password">Contraseña:
+        <input type="password" name="password" id="password" class="border rounded-full px-3 text-sm">
+      </label>
+    </div>
 
-        <input type="password" name="password" id="password">
+    <button type="submit" class="border px-3 py-2 bg-sky-600 text-white rounded-full">Iniciar Sesion</button>
 
-      </label><br>
+  </form>
 
-      <button type="submit">Iniciar Sesion</button>
-      
-    </form>
 
-    
-  </body>
+</body>
+
 </html>

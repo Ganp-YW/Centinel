@@ -1,6 +1,6 @@
 <?php
 
-include "./src/BD/DBConn.php";
+include __DIR__ . "/../BD/DBConn.php";
 
 
 $usuarioCorreo = $_POST["usuario_correo"];
