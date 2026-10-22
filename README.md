@@ -6,7 +6,7 @@ Sistema web de gestión, monitoreo de dispositivos de red y control de acceso pa
 
 ## 📁 Estructura del Software y Rutas de Directorios
 
-El proyecto sigue una arquitectura modular en PHP y JavaScript, utilizando **XAMPP (Apache + MariaDB)** para el entorno de servidor y **pnpm + Tailwind CSS** para el procesamiento de estilos.
+La estructura base del proyecto, su árbol de archivos y sus rutas iniciales fueron generadas utilizando el template de **Vite (Vanilla JavaScript)**, adaptándose e integrándose con un backend en **PHP sobre XAMPP (Apache + MariaDB)** y un sistema de estilos procesado con **Tailwind CSS v4 + pnpm**.
 
 ### Árbol de directorios
 
@@ -71,6 +71,7 @@ Estructura relacional diseñada para soportar:
 
 ## ⚙️ Tecnologías y Entorno
 
+- **Base de Proyecto / Scaffolding:** Vite (Vanilla JavaScript).
 - **Servidor Web / Backend:** PHP 8.x sobre servidor local Apache (XAMPP).
 - **Base de Datos:** MariaDB / MySQL.
 - **Gestor de Paquetes:** `pnpm`.
@@ -78,8 +79,15 @@ Estructura relacional diseñada para soportar:
 
 ---
 
-## 🚀 Comandos de Desarrollo
+## 🚀 Comandos y Configuración del Entorno
 
+### 1. Instalación de dependencias
+Para recrear la carpeta `node_modules` en una nueva máquina o entorno de evaluación:
+```bash
+pnpm install
+```
+
+### 2. Procesamiento de Estilos con Tailwind
 Para compilar y escuchar cambios en las clases de Tailwind CSS en tiempo real:
 
 ```bash
