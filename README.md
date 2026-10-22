@@ -1,4 +1,4 @@
-# Centinel 🛡️
+pn# Centinel 🛡️
 
 Sistema web de gestión, monitoreo de dispositivos de red y control de acceso para sedes e infraestructura.
 
