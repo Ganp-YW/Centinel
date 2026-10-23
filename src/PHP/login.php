@@ -3,19 +3,77 @@
 include __DIR__ . "/../BD/DBConn.php";
 
 
-$usuarioCorreo = $_POST["usuario_correo"];
 
-$password = $_POST["password"];
+header('Content-Type: application/json');
 
-$SQLgerente = "SELECT * FROM `usuario` WHERE type = 'Gerente'";
+function responder($success, $message, $datosExtra = [])
+{
+    $respuesta = array_merge([
+        'success' => $success,
+        'message' => $message
+    ], $datosExtra);
 
-$SQLtecnico = "SELECT * FROM `usuario` WHERE type = 'Tecnico'";
+    echo json_encode($respuesta);
 
-$filaGerente = mysqli_query($conexion, $SQLgerente);
-$filaGerente = mysqli_fetch_assoc($filaGerente);
+    exit;
+}
 
-$filaTecnico = mysqli_query($conexion, $SQLtecnico);
-$filaTecnico = mysqli_fetch_assoc($filaTecnico);
+function buscarUsuario($conexion, $identificador)
+{
+    $sql = "SELECT id_usuario, name_usu, email, passw, type
+                FROM usuario
+                WHERE name_usu = ? OR email = ?
+                LIMIT 1";
 
-echo "Tipo de Usuario: " . $filaGerente['type'] . "<br>";
-echo "Tipo de Usuario: " . $filaTecnico['type'];
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("ss", $identificador, $identificador);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_assoc(); // Retorna el registro o null si no existe
+}
+
+function verificarPassword($passwordIngresada, $passwordBD)
+{
+    // Comparación directa para texto plano (ej: "1234")
+    return $passwordIngresada === $passwordBD;
+}
+
+
+$usuarioCorreo = trim($_POST["usuario_correo"] ?? '');
+$password = trim($_POST["password"] ?? '');
+
+
+if (empty($usuarioCorreo) || empty($password)) {
+    responder(false, "Por favor completa todos los campos.");
+}
+
+$usuario = buscarUsuario($conexion, $usuarioCorreo);
+
+if (!$usuario) {
+    responder(false, "Usuario o contraseña incorrectos.");
+}
+
+if (!verificarPassword($password, $usuario['passw'])) {
+    responder(false, "Usuario o contraseña incorrectos.");
+}
+
+session_start();
+
+$_SESSION['id_usuario'] = $usuario['id_usuario'];
+$_SESSION['name_usu']   = $usuario['name_usu'];
+$_SESSION['type']       = $usuario['type'];
+
+$rutaDestino = '/index.html'; // Ruta por defecto
+
+
+if ($usuario['type'] === 'Gerente') {
+    $rutaDestino = 'src/Vistas/gerente.html';
+} elseif ($usuario['type'] === 'Tecnico') {
+    $rutaDestino = 'src/Vistas/tecnico.html';
+}
+
+responder(true, "Inicio de sesión exitoso.", [
+    'redirect' => $rutaDestino,
+    'rol'      => $usuario['type']
+]);

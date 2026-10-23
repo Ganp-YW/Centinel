@@ -13,24 +13,32 @@
 
 
 
-  <form action="/centinel/src/PHP/login.php" method="post"
-    class="grid grid-rows-3 items-center place-items-center gap-3 w-100">
+  <form id="form" class="grid grid-rows-3 items-center place-items-center gap-3 w-100">
     <h1 class="text-xl">Centinel</h1>
 
     <div class="grid grid-rows-2 gap-2">
 
       <label for="usuario_correo">Usuario / Correo:
-        <input type="text" name="usuario_correo" id="usuarioCorreo" class="border rounded-full px-3 text-sm">
+        <input type="text" name="usuario_correo" id="usuarioCorreo" class="border rounded-full px-3 text-sm" required>
       </label>
 
       <label for="password">Contraseña:
-        <input type="password" name="password" id="password" class="border rounded-full px-3 text-sm">
+        <input type="password" name="password" id="password" class="border rounded-full px-3 text-sm" required>
       </label>
     </div>
 
-    <button type="submit" class="border px-3 py-2 bg-sky-600 text-white rounded-full">Iniciar Sesion</button>
+    <button type="submit" id="enviar" class="border px-3 py-2 bg-sky-600 text-white rounded-full">Iniciar
+      Sesion</button>
+
+    <div class="text-red-900 text-sm font-semibold text-center mt-2" id="mensajeError"></div>
 
   </form>
+
+
+  <script type="module" src="src/JS/main.js"></script>
+
+
+
 
 
 </body>
