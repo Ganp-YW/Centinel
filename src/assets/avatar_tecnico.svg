@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgTecnico" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+
+    <!-- Polo Shirt Gradient -->
+    <linearGradient id="poloGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#065f46" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+
+    <clipPath id="avatarClipTec">
+      <circle cx="100" cy="100" r="96" />
+    </clipPath>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="96" fill="url(#bgTecnico)" />
+
+  <g clip-path="url(#avatarClipTec)">
+    <!-- Subtle tech grid background element -->
+    <circle cx="100" cy="100" r="92" fill="none" stroke="#34d399" stroke-width="2" opacity="0.35" />
+
+    <!-- Shoulders / Technical Polo -->
+    <path d="M20 205 Q28 145 70 135 L100 150 L130 135 Q172 145 180 205 Z" fill="url(#poloGrad)" />
+
+    <!-- Polo Collar -->
+    <path d="M70 135 L90 155 L100 138 L110 155 L130 135 L118 122 L100 130 L82 122 Z" fill="#047857" />
+    <polygon points="98,138 102,138 102,175 98,175" fill="#022c22" />
+    <circle cx="100" cy="148" r="1.8" fill="#a7f3d0" />
+    <circle cx="100" cy="160" r="1.8" fill="#a7f3d0" />
+
+    <!-- Tech Lanyard -->
+    <path d="M84 128 L95 195 L99 195 L88 128 Z" fill="#10b981" />
+    <path d="M116 128 L105 195 L101 195 L112 128 Z" fill="#10b981" />
+    <rect x="92" y="190" width="16" height="15" rx="2" fill="#e2e8f0" stroke="#047857" stroke-width="1.5" />
+    <circle cx="100" cy="197" r="3" fill="#059669" />
+
+    <!-- Neck -->
+    <path d="M84 102 L84 126 Q100 134 116 126 L116 102 Z" fill="#fed7aa" />
+
+    <!-- Head Base / Face -->
+    <ellipse cx="100" cy="85" rx="34" ry="40" fill="#ffedd5" />
+
+    <!-- Ears -->
+    <ellipse cx="66" cy="86" rx="6" ry="11" fill="#fed7aa" />
+    <ellipse cx="134" cy="86" rx="6" ry="11" fill="#fed7aa" />
+
+    <!-- Hair (Modern Technical Cut) -->
+    <path d="M66 75 Q68 42 100 42 Q132 42 134 75 Q126 50 100 52 Q74 50 66 75 Z" fill="#1e293b" />
+    <path d="M66 72 Q63 85 66 90 Q69 80 72 74 Z" fill="#1e293b" />
+    <path d="M134 72 Q137 85 134 90 Q131 80 128 74 Z" fill="#1e293b" />
+
+    <!-- Eyebrows -->
+    <path d="M77 71 Q85 68 93 72" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <path d="M123 71 Q115 68 107 72" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+    <!-- Eyes -->
+    <ellipse cx="85" cy="81" rx="3.5" ry="4.5" fill="#0f172a" />
+    <ellipse cx="115" cy="81" rx="3.5" ry="4.5" fill="#0f172a" />
+    <circle cx="86.5" cy="79.5" r="1.2" fill="#ffffff" />
+    <circle cx="116.5" cy="79.5" r="1.2" fill="#ffffff" />
+
+    <!-- Nose -->
+    <path d="M100 82 L98 93 L102 93" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- Smile -->
+    <path d="M89 102 Q100 110 111 102" stroke="#c2410c" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+    <!-- IT Specialist Support Headset / Earpiece -->
+    <path d="M62 76 Q60 52 100 50 Q140 52 138 76" stroke="#475569" stroke-width="3" fill="none" stroke-linecap="round" />
+    <rect x="58" y="74" width="8" height="18" rx="4" fill="#334155" />
+    <rect x="134" y="74" width="8" height="18" rx="4" fill="#334155" />
+    <circle cx="62" cy="83" r="2.5" fill="#34d399" />
+    <!-- Headset Microphone boom -->
+    <path d="M63 88 Q66 104 84 105" stroke="#475569" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    <ellipse cx="85" cy="105" rx="3.5" ry="2.5" fill="#1e293b" />
+  </g>
+
+  <!-- Outer Ring Border -->
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#34d399" stroke-width="5" />
+</svg>

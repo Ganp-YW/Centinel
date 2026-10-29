@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGerente" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    
+    <!-- Suit Gradient -->
+    <linearGradient id="suitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Tie Gradient -->
+    <linearGradient id="tieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <clipPath id="avatarClip">
+      <circle cx="100" cy="100" r="96" />
+    </clipPath>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="96" fill="url(#bgGerente)" />
+  
+  <g clip-path="url(#avatarClip)">
+    <!-- Subtle glow ring -->
+    <circle cx="100" cy="100" r="92" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.3" />
+
+    <!-- Shoulders / Suit Jacket -->
+    <path d="M20 205 Q28 145 70 135 L100 152 L130 135 Q172 145 180 205 Z" fill="url(#suitGrad)" />
+    
+    <!-- White Dress Shirt Collars -->
+    <path d="M72 135 L100 170 L128 135 L116 120 L100 132 L84 120 Z" fill="#ffffff" />
+
+    <!-- Lapels -->
+    <path d="M56 142 L80 180 L100 152 L72 135 Z" fill="#334155" />
+    <path d="M144 142 L120 180 L100 152 L128 135 Z" fill="#334155" />
+
+    <!-- Tie -->
+    <polygon points="95,135 105,135 108,145 100,195 92,145" fill="url(#tieGrad)" />
+    <polygon points="94,132 106,132 104,142 96,142" fill="#0369a1" />
+
+    <!-- Neck -->
+    <path d="M84 105 L84 128 Q100 136 116 128 L116 105 Z" fill="#fbcfe8" opacity="0.1" />
+    <path d="M84 102 L84 126 Q100 134 116 126 L116 102 Z" fill="#fcd34d" />
+    
+    <!-- Head Base / Face -->
+    <ellipse cx="100" cy="85" rx="34" ry="40" fill="#fde68a" />
+    
+    <!-- Ears -->
+    <ellipse cx="66" cy="86" rx="6" ry="11" fill="#fcd34d" />
+    <ellipse cx="134" cy="86" rx="6" ry="11" fill="#fcd34d" />
+
+    <!-- Hair -->
+    <path d="M66 75 Q68 45 100 45 Q132 45 134 75 Q125 56 100 58 Q75 56 66 75 Z" fill="#334155" />
+    <path d="M66 72 Q64 88 66 94 Q69 80 72 74 Z" fill="#334155" />
+    <path d="M134 72 Q136 88 134 94 Q131 80 128 74 Z" fill="#334155" />
+
+    <!-- Eyebrows -->
+    <path d="M78 72 Q86 69 92 73" stroke="#334155" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <path d="M122 72 Q114 69 108 73" stroke="#334155" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+    <!-- Eyes -->
+    <ellipse cx="85" cy="82" rx="3.5" ry="4.5" fill="#1e293b" />
+    <ellipse cx="115" cy="82" rx="3.5" ry="4.5" fill="#1e293b" />
+    <circle cx="86.5" cy="80.5" r="1.2" fill="#ffffff" />
+    <circle cx="116.5" cy="80.5" r="1.2" fill="#ffffff" />
+
+    <!-- Modern Executive Glasses -->
+    <rect x="74" y="74" width="22" height="15" rx="4" fill="none" stroke="#0f172a" stroke-width="2.2" />
+    <rect x="104" y="74" width="22" height="15" rx="4" fill="none" stroke="#0f172a" stroke-width="2.2" />
+    <line x1="96" y1="81" x2="104" y2="81" stroke="#0f172a" stroke-width="2.2" />
+    <line x1="68" y1="79" x2="74" y2="81" stroke="#0f172a" stroke-width="2.2" />
+    <line x1="126" y1="81" x2="132" y2="79" stroke="#0f172a" stroke-width="2.2" />
+
+    <!-- Nose -->
+    <path d="M100 83 L98 94 L102 94" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- Friendly Smile -->
+    <path d="M89 103 Q100 112 111 103" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+    <!-- Executive Lapel Badge -->
+    <circle cx="72" cy="162" r="5" fill="#38bdf8" />
+    <circle cx="72" cy="162" r="2.5" fill="#ffffff" />
+  </g>
+
+  <!-- Outer Ring Border -->
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#38bdf8" stroke-width="5" />
+</svg>

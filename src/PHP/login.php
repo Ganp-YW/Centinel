@@ -62,18 +62,20 @@ session_start();
 
 $_SESSION['id_usuario'] = $usuario['id_usuario'];
 $_SESSION['name_usu']   = $usuario['name_usu'];
+$_SESSION['email']      = $usuario['email'];
 $_SESSION['type']       = $usuario['type'];
 
-$rutaDestino = '/index.html'; // Ruta por defecto
-
-
-if ($usuario['type'] === 'Gerente') {
-    $rutaDestino = 'src/Vistas/gerente.html';
-} elseif ($usuario['type'] === 'Tecnico') {
-    $rutaDestino = 'src/Vistas/tecnico.html';
-}
+// Redirección al panel de control general
+$rutaDestino = 'src/Vistas/Panel de control.html';
 
 responder(true, "Inicio de sesión exitoso.", [
     'redirect' => $rutaDestino,
-    'rol'      => $usuario['type']
+    'rol'      => $usuario['type'],
+    'usuario'  => [
+        'id'     => $usuario['id_usuario'],
+        'nombre' => $usuario['name_usu'],
+        'email'  => $usuario['email'],
+        'rol'    => $usuario['type']
+    ]
 ]);
+

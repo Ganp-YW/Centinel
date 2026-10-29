@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinel - Panel de Control</title>
+    <link rel="stylesheet" href="../CSS/output.css">
+</head>
+
+<body class="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-800">
+    <!-- Header horizontal -->
+    <header class="w-full bg-gray-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+            <div class="flex items-center gap-3">
+                <img src="../assets/vite.svg" alt="Mi Logo" class="h-8 w-auto">
+                <span class="text-xl font-bold tracking-wide">Centinel</span>
+                <span id="badgeRol" class="text-xs bg-sky-600 text-white px-2.5 py-0.5 rounded-full font-medium">Cargando...</span>
+            </div>
+            <nav>
+                <ul class="flex items-center gap-6 text-sm font-medium">
+                    <li class="flex items-center gap-2.5">
+                        <img id="headerAvatarImg" src="../assets/avatar_gerente.svg" alt="Avatar" class="w-8 h-8 rounded-full border border-gray-600 object-cover shadow-sm">
+                        <span id="headerUserName" class="text-gray-200 text-sm">Usuario</span>
+                    </li>
+                    <li>
+                        <a href="../../index.html" id="btnCerrarSesion" class="text-gray-300 hover:text-white transition">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+        <!-- Barra lateral -->
+        <aside class="w-full md:w-64 bg-white p-4 rounded-xl shadow-md border border-gray-200 shrink-0 h-fit">
+            <h2 class="text-xs font-bold uppercase text-gray-500 mb-3 tracking-wider">Monitoreo por sede</h2>
+            <ul class="flex flex-col gap-1 text-sm font-medium">
+                <li>
+                    <a href="miranda.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                        Miranda
+                    </a>
+                </li>
+                <li>
+                    <a href="aragua.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                        Aragua
+                    </a>
+                </li>
+                <li>
+                    <a href="tachira.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                        Táchira
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Área de contenido principal (en blanco para futuras secciones) -->
+        <article class="flex-1 bg-white p-6 rounded-xl shadow-md border border-gray-200 flex flex-col gap-6 min-h-[400px]">
+            <div>
+                <h1 id="tituloBienvenida" class="text-2xl font-bold text-gray-800 mb-2">Bienvenido</h1>
+                <p id="subtituloBienvenida" class="text-gray-600">Panel principal de Centinel.</p>
+            </div>
+
+            <!-- Panel en blanco para futuras secciones -->
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center text-xs text-gray-500 bg-white border-t border-gray-200">
+        <p>Centinel &copy; 2026 - Universidad Bicentenaria de Aragua</p>
+    </footer>
+
+    <!-- Script de control dinámico del panel -->
+    <script type="module" src="../JS/panelControl.js"></script>
+</body>
+
+</html>

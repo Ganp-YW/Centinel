@@ -38,17 +38,13 @@ form.addEventListener('submit', async (e) => {
         if (data.success) {
             console.log(`Bienvenido ${data.rol}`);
 
-            // Opción 1: Usar directamente la ruta que calculó PHP
-            // (Nota: quitamos la barra inicial '/' para que no falle en localhost/centinel/)
-            window.location.href = data.redirect;
-
-            /* Opción 2: O si prefieres controlarlo explícitamente desde JS por rol:
-            if (data.rol === 'Gerente') {
-                window.location.href = 'src/Vistas/gerente.html';
-            } else if (data.rol === 'Tecnico') {
-                window.location.href = 'src/Vistas/tecnico.html';
+            // Guardamos la información del usuario en sessionStorage para acceso en el panel
+            if (data.usuario) {
+                sessionStorage.setItem('usuarioActivo', JSON.stringify(data.usuario));
             }
-            */
+
+            // Redirigir al panel de control general
+            window.location.href = data.redirect;
         } else {
             // Si las credenciales fallaron, mostramos el mensaje sin recargar
             mostrarError(data.message || 'Usuario o contraseña incorrectos.');
