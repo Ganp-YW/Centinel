@@ -3,15 +3,17 @@
 
 include __DIR__ . "/DBConn.php";
 
-header('Content-type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-$sql = "SELECT * FROM usuarios";
+$sql = "SELECT id_usuario, name_usu, email, type FROM usuario";
 
-$r = mysqli_query($conexion, $sql);
+$r = @mysqli_query($conexion, $sql);
 
+$datos = array();
 if ($r) {
-    $datos = array();
     while ($fila = mysqli_fetch_assoc($r)) {
         $datos[] = $fila;
     }
 }
+
+echo json_encode($datos);

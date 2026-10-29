@@ -41,6 +41,7 @@ centinel/
 │   ├── PHP/                    # Lógica del servidor, endpoints y controladores
 │   │   ├── login.php           # API de autenticación, creación de sesión y redirección
 │   │   ├── logout.php          # Cierre seguro y destrucción de sesión PHP
+│   │   ├── obtenerDispositivos.php # API para consultar inventario de red, métricas y sedes
 │   │   └── obtenerSesion.php   # Endpoint para validar autenticación y datos de usuario activo
 │   │
 │   └── Vistas/                 # Vistas y paneles de control
@@ -72,6 +73,7 @@ centinel/
 | Ruta / Archivo | Método / Uso | Responsabilidad |
 | :--- | :--- | :--- |
 | `src/PHP/login.php` | `POST` (JSON) | API de autenticación: verifica credenciales mediante consultas preparadas (`Prepared Statements`), inicia sesión (`$_SESSION`) y responde en formato JSON con redirección directa a `Panel de control.html` y los datos del usuario. |
+| `src/PHP/obtenerDispositivos.php` | `GET` (JSON) | Endpoint que retorna métricas, ancho de banda, latencia y sedes de dispositivos de red con soporte relacional y respaldo en memoria. |
 | `src/PHP/obtenerSesion.php` | `GET` (JSON) | Endpoint de verificación de sesión: retorna el estado de autenticación (`autenticado: true/false`) y datos de la cuenta activa (`id`, `nombre`, `email`, `rol`). |
 | `src/PHP/logout.php` | `POST` (JSON) | Destruye completamente la sesión del servidor y cookies asociadas de forma segura. |
 | `src/BD/DBConn.php` | Inclusión PHP | Conexión a la base de datos MariaDB (`centinel`) centralizada con `mysqli`. |

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centinel - Panel de Control</title>
-    <link rel="stylesheet" href="../CSS/output.css?v=1.2">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
 </head>
 
 <body class="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-800">
@@ -32,39 +32,277 @@
     </header>
 
     <!-- Contenido principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col md:flex-row gap-6">
         <!-- Barra lateral -->
-        <aside class="w-full md:w-64 bg-white p-4 rounded-xl shadow-md border border-gray-200 shrink-0 h-fit">
-            <h2 class="text-xs font-bold uppercase text-gray-500 mb-3 tracking-wider">Monitoreo por sede</h2>
-            <ul class="flex flex-col gap-1 text-sm font-medium">
-                <li>
-                    <a href="miranda.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
-                        Miranda
-                    </a>
-                </li>
-                <li>
-                    <a href="aragua.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
-                        Aragua
-                    </a>
-                </li>
-                <li>
-                    <a href="tachira.html" class="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
-                        Táchira
-                    </a>
-                </li>
-            </ul>
-        </aside>
-
-        <!-- Área de contenido principal (en blanco para futuras secciones) -->
-        <article class="flex-1 bg-white p-6 rounded-xl shadow-md border border-gray-200 flex flex-col gap-6 min-h-[400px]">
+        <aside class="w-full md:w-64 bg-white p-5 rounded-xl shadow-md border border-gray-200 shrink-0 h-fit flex flex-col gap-6">
+            <!-- Monitoreo por sede -->
             <div>
-                <h1 id="tituloBienvenida" class="text-2xl font-bold text-gray-800 mb-2">Bienvenido</h1>
-                <p id="subtituloBienvenida" class="text-gray-600">Panel principal de Centinel.</p>
+                <h2 class="text-xs font-bold uppercase text-gray-500 mb-3 tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Monitoreo por sede
+                </h2>
+                <ul class="flex flex-col gap-1 text-sm font-medium">
+                    <li>
+                        <a href="#" data-sede="todas" class="sede-link flex items-center justify-between px-3 py-2 rounded-lg text-sky-700 bg-sky-50 font-semibold transition">
+                            <span>Todas las sedes</span>
+                            <span id="badgeTotalSedes" class="text-xs px-2 py-0.5 rounded-full bg-sky-200 text-sky-800 font-bold">--</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-sede="Miranda" class="sede-link flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                            <span>Miranda</span>
+                            <span id="badgeMiranda" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">--</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-sede="Aragua" class="sede-link flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                            <span>Aragua</span>
+                            <span id="badgeAragua" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">--</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-sede="Táchira" class="sede-link flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition">
+                            <span>Táchira</span>
+                            <span id="badgeTachira" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">--</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
 
-            <!-- Panel en blanco para futuras secciones -->
-        </article>
+            <!-- Gestión -->
+            <div class="border-t border-gray-100 pt-4">
+                <h2 class="text-xs font-bold uppercase text-gray-500 mb-3 tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Gestión
+                </h2>
+                <ul class="flex flex-col gap-1 text-sm font-medium">
+                    <li>
+                        <a href="#" id="menuGestionDispositivos" class="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 hover:bg-sky-50 text-gray-700 hover:text-sky-700 font-medium transition">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                                </svg>
+                                Dispositivos
+                            </span>
+                            <span id="badgeGestionTotal" class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 font-semibold">--</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Sección de contenido del panel -->
+        <section class="flex-1 flex flex-col gap-6">
+            <!-- Saludo y encabezado de estado -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 id="tituloBienvenida" class="text-2xl font-bold text-gray-800">Bienvenido Técnico</h1>
+                    <p id="subtituloBienvenida" class="text-gray-600 text-sm mt-1">Estado operativo de los dispositivos de red.</p>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Monitoreo en Vivo
+                    </span>
+                    <button id="btnRefrescar" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg transition shadow-sm cursor-pointer" title="Actualizar datos">
+                        <svg id="iconRefresh" class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjetas de estado -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <article class="bg-white p-5 rounded-xl shadow-md border border-gray-200 flex flex-col justify-between hover:shadow-lg transition">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-600">Dispositivos Activos</h3>
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p id="kpiDispositivosActivos" class="text-3xl font-extrabold text-gray-800">--</p>
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            En línea ahora
+                        </span>
+                    </div>
+                </article>
+
+                <article class="bg-white p-5 rounded-xl shadow-md border border-gray-200 flex flex-col justify-between hover:shadow-lg transition">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-600">Alertas Activas</h3>
+                        <div class="w-10 h-10 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p id="kpiAlertasActivas" class="text-3xl font-extrabold text-gray-800">--</p>
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Requieren revisión
+                        </span>
+                    </div>
+                </article>
+
+                <article class="bg-white p-5 rounded-xl shadow-md border border-gray-200 flex flex-col justify-between hover:shadow-lg transition">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-600">Latencia Promedio</h3>
+                        <div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p id="kpiLatenciaPromedio" class="text-3xl font-extrabold text-gray-800">-- ms</p>
+                        <span id="kpiLatenciaSubtexto" class="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                            Todas las sedes
+                        </span>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Tabla de dispositivos -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Dispositivos de Red</h2>
+                        <p class="text-xs text-gray-500 mt-0.5" id="subtituloTabla">Inventario de equipos, conectividad y ancho de banda</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Buscador rápido -->
+                        <div class="relative">
+                            <input type="text" id="buscadorDispositivos" placeholder="Buscar por nombre o IP..."
+                                class="text-xs border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 w-44 sm:w-56 text-gray-700">
+                            <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <!-- Filtro selector sede -->
+                        <select id="selectorSede" class="text-xs border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white cursor-pointer font-medium">
+                            <option value="todas">Todas las sedes</option>
+                            <option value="Miranda">Miranda</option>
+                            <option value="Aragua">Aragua</option>
+                            <option value="Táchira">Táchira</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="px-5 py-3.5">Nombre</th>
+                                <th class="px-5 py-3.5">IP</th>
+                                <th class="px-5 py-3.5">Sede</th>
+                                <th class="px-5 py-3.5">Estado</th>
+                                <th class="px-5 py-3.5">BW</th>
+                                <th class="px-5 py-3.5">Latencia</th>
+                                <th class="px-5 py-3.5 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaDispositivos" class="divide-y divide-gray-100 text-gray-700">
+                            <tr>
+                                <td class="px-5 py-4 font-semibold text-gray-900">Router Principal</td>
+                                <td class="px-5 py-4 font-mono text-xs text-gray-600">192.168.1.1</td>
+                                <td class="px-5 py-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Miranda</span></td>
+                                <td class="px-5 py-4"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Activo</span></td>
+                                <td class="px-5 py-4 font-medium text-gray-800">100 Mbps</td>
+                                <td class="px-5 py-4 font-medium text-emerald-600">12 ms</td>
+                                <td class="px-5 py-4 text-right"><button class="btn-detalle inline-flex items-center px-3 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition cursor-pointer" data-id="1">Detalle</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-5 py-4 font-semibold text-gray-900">Switch Piso 2</td>
+                                <td class="px-5 py-4 font-mono text-xs text-gray-600">192.168.1.14</td>
+                                <td class="px-5 py-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Aragua</span></td>
+                                <td class="px-5 py-4"><span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Inactivo</span></td>
+                                <td class="px-5 py-4 text-gray-400">-- Mbps</td>
+                                <td class="px-5 py-4 text-gray-400">-- ms</td>
+                                <td class="px-5 py-4 text-right"><button class="btn-detalle inline-flex items-center px-3 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition cursor-pointer" data-id="2">Detalle</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pie de tabla -->
+                <div class="px-5 py-3.5 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 gap-2">
+                    <span id="contadorDispositivos">Cargando inventario de red...</span>
+                    <span id="origenDatosBadge" class="inline-flex items-center gap-1 text-gray-400">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Actualización en tiempo real
+                    </span>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <!-- Modal de Detalle de Dispositivo -->
+    <div id="modalDetalle" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full overflow-hidden">
+            <div class="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <div id="modalIcono" class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="modalNombre" class="text-base font-bold text-gray-900">Router Principal</h3>
+                        <span id="modalEstadoBadge" class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Activo</span>
+                    </div>
+                </div>
+                <button id="modalCerrarBtn" type="button" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-5 grid grid-cols-2 gap-3 text-sm">
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <span class="text-xs font-medium text-gray-500 uppercase block mb-1">Dirección IP</span>
+                    <span id="modalIP" class="font-mono text-gray-900 font-semibold text-xs">192.168.1.1</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <span class="text-xs font-medium text-gray-500 uppercase block mb-1">Sede</span>
+                    <span id="modalSede" class="text-gray-900 font-semibold text-xs">Miranda</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <span class="text-xs font-medium text-gray-500 uppercase block mb-1">Ancho de Banda</span>
+                    <span id="modalBW" class="text-gray-900 font-semibold text-xs">100 Mbps</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <span class="text-xs font-medium text-gray-500 uppercase block mb-1">Latencia</span>
+                    <span id="modalLatencia" class="text-gray-900 font-semibold text-xs">12 ms</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 col-span-2">
+                    <span class="text-xs font-medium text-gray-500 uppercase block mb-1">Fecha de Registro</span>
+                    <span id="modalFecha" class="text-gray-900 font-medium text-xs">2026-10-22</span>
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <button id="modalCerrarBtn2" type="button" class="px-4 py-2 text-xs font-medium bg-gray-800 text-white hover:bg-gray-700 rounded-lg transition shadow-sm cursor-pointer">
+                    Cerrar Detalle
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="w-full py-4 text-center text-xs text-gray-500 bg-white border-t border-gray-200">

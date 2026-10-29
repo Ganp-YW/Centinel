@@ -82,6 +82,43 @@ INSERT INTO `usuario` (`id_usuario`, `name_usu`, `email`, `passw`, `type`) VALUE
 (2, 'Admin2', 'ejemplotecnico@gmail.com', '1234', 'Tecnico');
 
 --
+-- Volcado de datos para la tabla `sede`
+--
+
+INSERT INTO `sede` (`id_sede`, `name_sede`) VALUES
+(1, 'Miranda'),
+(2, 'Aragua'),
+(3, 'Táchira');
+
+--
+-- Volcado de datos para la tabla `dispositivo`
+--
+
+INSERT INTO `dispositivo` (`id_dispositivo`, `name_dispositivo`, `ip_dispositivo`, `status`, `BW_dispositivo`, `latencia_dispositivo`, `fecha`) VALUES
+(1, 'Router Principal', '192.168.1.1', 1, 100, 12, '2026-10-22'),
+(2, 'Switch Piso 2', '192.168.1.14', 0, 0, 0, '2026-10-22'),
+(3, 'Firewall Perimetral', '192.168.1.254', 1, 500, 8, '2026-10-23'),
+(4, 'Switch Core Aragua', '192.168.2.1', 1, 1000, 15, '2026-10-24'),
+(5, 'Servidor DNS/DHCP', '192.168.2.10', 1, 100, 5, '2026-10-24'),
+(6, 'Router Borde Táchira', '192.168.3.1', 1, 200, 24, '2026-10-25'),
+(7, 'Access Point Planta 1', '192.168.3.20', 0, 0, 0, '2026-10-25'),
+(8, 'Servidor de Respaldos', '192.168.1.50', 1, 300, 11, '2026-10-26');
+
+--
+-- Volcado de datos para la tabla `sede_dispositivo`
+--
+
+INSERT INTO `sede_dispositivo` (`id_sede`, `id_dispositivo`) VALUES
+(1, 1),
+(2, 2),
+(1, 3),
+(2, 4),
+(2, 5),
+(3, 6),
+(3, 7),
+(1, 8);
+
+--
 -- Índices para tablas volcadas
 --
 
