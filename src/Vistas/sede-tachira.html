@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinel - Sede Táchira</title>
+    <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.2">
+
+    <meta name="description" content="Panel de control de la sede Táchira de Centinel, mostrando el estado de los dispositivos y alertas recientes.">
+    <meta name="keywords" content="Centinel, sede Táchira, monitoreo, dispositivos, alertas, panel de control", tarjetas>
+    <meta name="author" content="Centinel Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1E3A8A">
+</head>
+<body>
+
+    <header>
+        <div>
+            <img src="../../public/favicon.svg" alt="Logo Centinel" width="32" height="32">
+            <span>Centinel</span>
+            <span id="badgeRol">Rol</span>
+        </div>
+        <div>
+            <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="Avatar" width="32" height="32">
+            <span id="headerUserName">Usuario</span>
+            <button type="button" id="btnCerrarSesion">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main data-sede="Tachira">
+
+        <aside>
+            <nav>
+                <a href="#" id="linkVolverPanel">← Volver al panel</a>
+
+                <h3>Monitoreo por sede</h3>
+                <ul>
+                    <li><a href="sede-miranda.html">Miranda</a></li>
+                    <li><a href="sede-aragua.html">Aragua</a></li>
+                    <li><a href="sede-tachira.html" aria-current="page">Táchira</a></li>
+                </ul>
+
+                <h3>Herramientas</h3>
+                <ul>
+                    <li><a href="simulacion.html">Simulación</a></li>
+                    <li><a href="soporte.html">Soporte</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <section>
+
+            <!-- Título de la sede -->
+            <div>
+                <h1 id="tituloSede">Sede Táchira</h1>
+                <p id="ubicacionSede">Estado Táchira, Venezuela</p>
+            </div>
+
+            <!-- Tarjetas resumen -->
+            <div>
+                <article>
+                    <h2>Total dispositivos</h2>
+                    <p id="totalDispositivos">0</p>
+                </article>
+                <article>
+                    <h2>En línea</h2>
+                    <p id="dispositivosOnline">0</p>
+                </article>
+                <article>
+                    <h2>Caídos</h2>
+                    <p id="dispositivosOffline">0</p>
+                </article>
+                <article>
+                    <h2>Latencia promedio</h2>
+                    <p id="latenciaPromedio">0 ms</p>
+                </article>
+            </div>
+
+            <!-- Filtros -->
+            <form id="formFiltros">
+                <label for="buscarDispositivo">Buscar:</label>
+                <input type="search" id="buscarDispositivo" name="buscar" placeholder="Nombre o IP">
+
+                <label for="filtroEstado">Estado:</label>
+                <select id="filtroEstado" name="estado">
+                    <option value="todos">Todos</option>
+                    <option value="online">En línea</option>
+                    <option value="offline">Caído</option>
+                    <option value="alerta">Con alerta</option>
+                </select>
+            </form>
+
+            <!-- Tabla de dispositivos -->
+            <div>
+                <h2>Dispositivos de la sede</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>IP</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>BW</th>
+                            <th>Latencia</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaDispositivos">
+                        <tr>
+                            <td colspan="7">Cargando dispositivos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Alertas recientes -->
+            <div>
+                <h2>Alertas recientes</h2>
+                <ul id="listaAlertas">
+                    <li>No hay alertas recientes.</li>
+                </ul>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Universidad Bicentenaria de Aragua - Facultad de Ingeniería - Escuela de Ingeniería de Sistemas</p>
+    </footer>
+
+    <script src="../JS/panelControl.js"></script>
+</body>
+</html>
