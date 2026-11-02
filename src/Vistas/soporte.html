@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinel - Soporte y Contacto</title>
+    <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.2">
+
+    <meta name="description" content="Página de soporte y contacto de Centinel, con formulario para enviar mensajes y preguntas frecuentes.">
+    <meta name="keywords" content="soporte, contacto, preguntas frecuentes, formulario, Centinel">
+    <meta name="author" content="Centinel Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1E3A8A">
+</head>
+<body>
+
+    <header>
+        <div>
+            <img src="../../public/favicon.svg" alt="Logo Centinel" width="32" height="32">
+            <span>Centinel</span>
+        </div>
+        <nav>
+            <a href="../../index.html">Iniciar sesión</a>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- Título -->
+        <section>
+            <h1>Soporte y Contacto</h1>
+            <p>¿Tienes problemas con el sistema? Escríbenos o revisa las preguntas frecuentes.</p>
+        </section>
+
+        <!-- Formulario de contacto -->
+        <section>
+            <h2>Envíanos un mensaje</h2>
+            <form id="formSoporte">
+                <div>
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div>
+                    <label for="correo">Correo electrónico</label>
+                    <input type="email" id="correo" name="correo" required>
+                </div>
+                <div>
+                    <label for="sede">Sede</label>
+                    <select id="sede" name="sede" required>
+                        <option value="">Selecciona una sede</option>
+                        <option value="Miranda">Miranda</option>
+                        <option value="Aragua">Aragua</option>
+                        <option value="Tachira">Táchira</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="asunto">Asunto</label>
+                    <select id="asunto" name="asunto" required>
+                        <option value="">Selecciona un asunto</option>
+                        <option value="acceso">No puedo iniciar sesión</option>
+                        <option value="dispositivo">Problema con un dispositivo</option>
+                        <option value="error">Error en el sistema</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="mensaje">Mensaje</label>
+                    <textarea id="mensaje" name="mensaje" rows="5" required></textarea>
+                </div>
+                <button type="submit" id="btnEnviarSoporte">Enviar</button>
+                <p id="mensajeEstado" role="status"></p>
+            </form>
+        </section>
+
+        <section>
+            <h2>Preguntas frecuentes</h2>
+
+            <details>
+                <summary>¿Olvidé mi contraseña, qué hago?</summary>
+                <p>Contacta al gerente de tu sede para que restablezca tu acceso.</p>
+            </details>
+
+            <details>
+                <summary>¿Qué significa que un dispositivo esté "Caído"?</summary>
+                <p>Que el sistema no recibe respuesta del equipo. Verifica la conexión física y la energía.</p>
+            </details>
+
+            <details>
+                <summary>¿Quién puede ver todas las sedes?</summary>
+                <p>Los gerentes tienen acceso completo. Los técnicos ven las sedes asignadas.</p>
+            </details>
+        </section>
+
+        <section>
+            <h2>Información de contacto</h2>
+            <address>
+                <p>Correo: <a href="mailto:soporte@centinel.com">soporte@centinel.com</a></p>
+                <p>Teléfono: <a href="tel:+580000000000">+58 000-0000000</a></p>
+                <p>Horario: Lunes a viernes, 8:00 a.m. - 5:00 p.m.</p>
+            </address>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Universidad Bicentenaria de Aragua - Facultad de Ingeniería - Escuela de Ingeniería de Sistemas</p>
+    </footer>
+
+</body>
+</html>
