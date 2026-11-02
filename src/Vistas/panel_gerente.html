@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
+    <link rel="stylesheet" href="../CSS/output.css">
+    <title>Centinel - Panel Gerente</title>
+
+    <meta name="description" content="Panel de control para el gerente del sistema Centinel. Administra usuarios, sedes y reportes de manera eficiente.">
+    <meta name="keywords" content=" Panel de control, gerente, administración, usuarios, sedes, reportes, monitoreo, sedes">
+    <meta name="author" content="Centinel Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1E3A8A">
+    
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <img src="../assets/vite.svg" alt="Centinel Logo">
+            <span>Centinel</span>
+            <span id="BadgeRol">Gerente</span>
+        </div>
+
+        <nav>
+            <ul>
+                <li>
+                    <img id="headerAvatarImg" src="../assets/avatar_gerente.svg" alt="Avatar Gerente">
+                    <span id="headerUserName">Gerente</span>
+                </li>
+                <li>
+                    <a href="../../index.html" id="btnCerrarSesion">Cerrar Sesión</a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+
+        <aside>
+            <!-- Menú de gestión -->
+            <div>
+                <h2>Gestión</h2>
+                <ul>
+                    <li><a href="#">Resumen General</a></li>
+                    <li><a href="#">Usuarios</a></li>
+                    <li><a href="#">Sedes</a></li>
+                    <li><a href="#">Reportes</a></li>
+                </ul>
+            </div>
+            <!-- Monitoreo por sede -->
+            <div>
+                <h2>Monitoreo por sede</h2>
+                <ul>
+                    <li><a href="#">Miranda</a></li>
+                    <li><a href="#">Aragua</a></li>
+                    <li><a href="#">Táchira</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <section>
+
+            <div>
+                <h1 id="tituloBienvenida">Bienvenido Gerente</h1>
+                <p id="subtituloBienvenida">Vista general del sistema Centinel.</p>
+            </div>
+
+            <!-- Tarjetas de resumen -->
+            <div>
+                <article>
+                    <h3>Usuarios</h3>
+                    <p>--</p>
+                    <span>Registrados en el sistema</span>
+                </article>
+
+                <article>
+                    <h3>Sedes</h3>
+                    <p>--</p>
+                    <span>Ubicaciones activas</span>
+                </article>
+
+                <article>
+                    <h3>Dispositivos</h3>
+                    <p>--</p>
+                    <span>En todas las sedes</span>
+                </article>
+
+                <article>
+                    <h3>Alertas</h3>
+                    <p>--</p>
+                    <span>Requieren atención</span>
+                </article>
+            </div>
+
+            <!-- Contenido dinámico -->
+            <div>
+                <h2>Actividad Reciente</h2>
+                <p>Selecciona una sección del menú para ver el contenido.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Centinel &copy; 2026 - Universidad Bicentenaria de Aragua</p>
+    </footer>
+
+    <script type="module" src="../JS/panelControl.js"></script>
+</body>
+
+</html>
