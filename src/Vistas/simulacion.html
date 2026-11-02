@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinel - Simulación</title>
+    <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.2">
+
+    <meta name="description" content="Simulación de red para probar el monitoreo de dispositivos en diferentes sedes.">
+    <meta name="keywords" content="simulación, red, monitoreo, dispositivos, sedes, Centinel">
+    <meta name="author" content="Centinel Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1E3A8A">
+
+</head>
+<body>
+
+    <header>
+        <div>
+            <img src="../../public/favicon.svg" alt="Logo Centinel" width="32" height="32">
+            <span>Centinel</span>
+            <span id="badgeRol">Rol</span>
+        </div>
+        <div>
+            <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="Avatar" width="32" height="32">
+            <span id="headerUserName">Usuario</span>
+            <button type="button" id="btnCerrarSesion">Cerrar sesión</button>
+        </div>
+    </header>
+
+    <main>
+
+        <aside>
+            <nav>
+                <a href="#" id="linkVolverPanel">← Volver al panel</a>
+
+                <h3>Monitoreo por sede</h3>
+                <ul>
+                    <li><a href="sede-miranda.html">Miranda</a></li>
+                    <li><a href="sede-aragua.html">Aragua</a></li>
+                    <li><a href="sede-tachira.html">Táchira</a></li>
+                </ul>
+
+                <h3>Herramientas</h3>
+                <ul>
+                    <li><a href="simulacion.html" aria-current="page">Simulación</a></li>
+                    <li><a href="soporte.html">Soporte</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <section>
+
+            <div>
+                <h1>Simulación de red</h1>
+                <p>Simula fallas en los dispositivos para probar cómo responde el monitoreo.</p>
+            </div>
+
+            <!-- Configuración de la simulación -->
+            <form id="formSimulacion">
+                <fieldset>
+                    <legend>Configuración</legend>
+
+                    <div>
+                        <label for="simSede">Sede</label>
+                        <select id="simSede" name="sede" required>
+                            <option value="">Selecciona una sede</option>
+                            <option value="Miranda">Miranda</option>
+                            <option value="Aragua">Aragua</option>
+                            <option value="Tachira">Táchira</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="simDispositivo">Dispositivo</label>
+                        <select id="simDispositivo" name="dispositivo" required>
+                            <option value="">Primero selecciona una sede</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="simEscenario">Escenario</label>
+                        <select id="simEscenario" name="escenario" required>
+                            <option value="">Selecciona un escenario</option>
+                            <option value="caida">Caída del dispositivo</option>
+                            <option value="latencia">Latencia alta</option>
+                            <option value="saturacion">Saturación de ancho de banda</option>
+                            <option value="intermitente">Conexión intermitente</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="simDuracion">Duración (segundos)</label>
+                        <input type="number" id="simDuracion" name="duracion" min="5" max="300" value="30" required>
+                    </div>
+                </fieldset>
+
+                <div>
+                    <button type="submit" id="btnIniciarSimulacion">Iniciar simulación</button>
+                    <button type="button" id="btnDetenerSimulacion" disabled>Detener</button>
+                </div>
+            </form>
+
+            <!-- Estado actual -->
+            <div>
+                <h2>Estado de la simulación</h2>
+                <p>Estado: <strong id="simEstado">Inactiva</strong></p>
+                <p>Tiempo restante: <span id="simTiempo">--</span></p>
+                <progress id="simProgreso" value="0" max="100"></progress>
+            </div>
+
+            <!-- Resultados en vivo -->
+            <div>
+                <h2>Resultados</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Dispositivo</th>
+                            <th>Estado</th>
+                            <th>BW</th>
+                            <th>Latencia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaResultados">
+                        <tr>
+                            <td colspan="5">Aún no hay resultados.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Registro de eventos -->
+            <div>
+                <h2>Registro de eventos</h2>
+                <ul id="logSimulacion">
+                    <li>Esperando inicio de simulación...</li>
+                </ul>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Universidad Bicentenaria de Aragua - Facultad de Ingeniería - Escuela de Ingeniería de Sistemas</p>
+    </footer>
+
+    <script src="../JS/panelControl.js"></script>
+</body>
+</html>
