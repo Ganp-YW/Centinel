@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Consulta el historial completo de mediciones y simulaciones registradas.">
+    <title>Centinel - Historial de simulaciones</title>
+    <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <a href="Panel%20de%20control.html" class="flex items-center gap-3">
+                <img src="../../public/favicon.svg" alt="" class="h-9 w-9">
+                <span class="text-xl font-bold tracking-wide">Centinel</span>
+                <span id="badgeRol" class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Cargando...</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="" class="h-9 w-9 rounded-full border border-slate-600">
+                <span id="headerUserName" class="hidden text-sm text-slate-200 sm:inline">Usuario</span>
+                <button id="btnCerrarSesion" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800">Salir</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+        <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Navegación">
+            <a href="Panel%20de%20control.html" class="hover:text-sky-700">Panel</a>
+            <span aria-hidden="true">/</span>
+            <a href="simulacion.html" class="hover:text-sky-700">Simulación</a>
+            <span aria-hidden="true">/</span>
+            <span class="font-medium text-slate-800">Historial</span>
+        </nav>
+
+        <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-bold uppercase tracking-widest text-sky-700">Registro de actividad</p>
+                <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Historial de simulaciones</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Cada fila corresponde a una medición registrada. Se muestran primero las ejecuciones más recientes.</p>
+            </div>
+            <a href="simulacion.html" class="inline-flex items-center justify-center rounded-xl bg-sky-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800">Nueva simulación</a>
+        </section>
+
+        <section class="grid gap-4 sm:grid-cols-2">
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Mediciones registradas</p>
+                <p id="totalHistorial" class="mt-2 text-3xl font-bold text-slate-900">--</p>
+            </article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Página actual</p>
+                <p id="paginaActual" class="mt-2 text-3xl font-bold text-sky-700">--</p>
+            </article>
+        </section>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900">Todas las simulaciones</h2>
+                    <p id="estadoHistorial" class="mt-1 text-sm text-slate-500" role="status" aria-live="polite">Cargando historial...</p>
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    <span>Filtrar por sede</span>
+                    <select id="filtroSedeHistorial" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                        <option value="todas">Todas las sedes</option>
+                        <option value="Miranda">Miranda</option>
+                        <option value="Aragua">Aragua</option>
+                        <option value="Táchira">Táchira</option>
+                    </select>
+                </label>
+                <div class="flex items-center gap-2">
+                    <button id="btnActualizarHistorial" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Actualizar</button>
+                    <button id="btnReiniciarHistorial" type="button" class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">Reiniciar historial</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1050px] text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th scope="col" class="px-5 py-3">Fecha y hora</th>
+                            <th scope="col" class="px-4 py-3">Dispositivo</th>
+                            <th scope="col" class="px-4 py-3">Sede</th>
+                            <th scope="col" class="px-4 py-3">Conectividad</th>
+                            <th scope="col" class="px-4 py-3">Latencia</th>
+                            <th scope="col" class="px-4 py-3">Ancho de banda</th>
+                            <th scope="col" class="px-4 py-3">Modo</th>
+                            <th scope="col" class="px-4 py-3">Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial" class="divide-y divide-slate-100">
+                        <tr><td colspan="8" class="px-5 py-12 text-center text-slate-500">Cargando historial...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p id="rangoHistorial" class="text-sm text-slate-500">--</p>
+                <div class="flex items-center gap-2">
+                    <button id="btnAnterior" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">Anterior</button>
+                    <button id="btnSiguiente" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">Siguiente</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="../JS/historialSimulaciones.js"></script>
+</body>
+</html>

@@ -1,151 +1,116 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Configura y guarda simulaciones de conectividad para todos los dispositivos Centinel.">
     <title>Centinel - Simulación</title>
     <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.2">
-
-    <meta name="description" content="Simulación de red para probar el monitoreo de dispositivos en diferentes sedes.">
-    <meta name="keywords" content="simulación, red, monitoreo, dispositivos, sedes, Centinel">
-    <meta name="author" content="Centinel Team">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#1E3A8A">
-
+    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
 </head>
-<body>
-
-    <header>
-        <div>
-            <img src="../../public/favicon.svg" alt="Logo Centinel" width="32" height="32">
-            <span>Centinel</span>
-            <span id="badgeRol">Rol</span>
-        </div>
-        <div>
-            <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="Avatar" width="32" height="32">
-            <span id="headerUserName">Usuario</span>
-            <button type="button" id="btnCerrarSesion">Cerrar sesión</button>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <a href="Panel%20de%20control.html" class="flex items-center gap-3">
+                <img src="../../public/favicon.svg" alt="" class="h-9 w-9">
+                <span class="text-xl font-bold tracking-wide">Centinel</span>
+                <span id="badgeRol" class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Cargando...</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="" class="h-9 w-9 rounded-full border border-slate-600">
+                <span id="headerUserName" class="hidden text-sm text-slate-200 sm:inline">Usuario</span>
+                <button id="btnCerrarSesion" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800">Salir</button>
+            </div>
         </div>
     </header>
 
-    <main>
+    <main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+        <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Navegación">
+            <a href="Panel%20de%20control.html" class="hover:text-sky-700">Panel</a>
+            <span aria-hidden="true">/</span>
+            <span class="font-medium text-slate-800">Simulación</span>
+            <a href="historial-simulaciones.html" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 shadow-sm hover:border-sky-300 hover:text-sky-700">Historial de simulaciones</a>
+            <a id="linkReportes" href="reportes.html" class="ml-auto hidden rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 shadow-sm hover:border-sky-300 hover:text-sky-700">Reportes gerenciales</a>
+        </nav>
 
-        <aside>
-            <nav>
-                <a href="#" id="linkVolverPanel">← Volver al panel</a>
-
-                <h3>Monitoreo por sede</h3>
-                <ul>
-                    <li><a href="sede-miranda.html">Miranda</a></li>
-                    <li><a href="sede-aragua.html">Aragua</a></li>
-                    <li><a href="sede-tachira.html">Táchira</a></li>
-                </ul>
-
-                <h3>Herramientas</h3>
-                <ul>
-                    <li><a href="simulacion.html" aria-current="page">Simulación</a></li>
-                    <li><a href="soporte.html">Soporte</a></li>
-                </ul>
-            </nav>
-        </aside>
-
-        <section>
-
+        <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h1>Simulación de red</h1>
-                <p>Simula fallas en los dispositivos para probar cómo responde el monitoreo.</p>
+                <p class="text-sm font-bold uppercase tracking-widest text-sky-700">Laboratorio de red</p>
+                <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Simulación de dispositivos</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Define el modo y los valores a registrar. Los datos automáticos se generan al confirmar la lista completa.</p>
+            </div>
+            <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                <span>Los cambios se guardan al confirmar</span>
+            </div>
+        </section>
+
+        <section class="grid gap-4 sm:grid-cols-3">
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Dispositivos</p>
+                <p id="totalDispositivos" class="mt-2 text-3xl font-bold text-slate-900">--</p>
+            </article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Modo automático</p>
+                <p id="totalAutomaticos" class="mt-2 text-3xl font-bold text-sky-700">--</p>
+            </article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Modo manual</p>
+                <p id="totalManuales" class="mt-2 text-3xl font-bold text-violet-700">--</p>
+            </article>
+        </section>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900">Inventario de todas las sedes</h2>
+                    <p id="estadoCarga" class="mt-1 text-sm text-slate-500" role="status">Cargando dispositivos...</p>
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    <span>Filtrar sede</span>
+                    <select id="filtroSede" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                        <option value="todas">Todas las sedes</option>
+                        <option value="Miranda">Miranda</option>
+                        <option value="Aragua">Aragua</option>
+                        <option value="Táchira">Táchira</option>
+                    </select>
+                </label>
             </div>
 
-            <!-- Configuración de la simulación -->
             <form id="formSimulacion">
-                <fieldset>
-                    <legend>Configuración</legend>
-
-                    <div>
-                        <label for="simSede">Sede</label>
-                        <select id="simSede" name="sede" required>
-                            <option value="">Selecciona una sede</option>
-                            <option value="Miranda">Miranda</option>
-                            <option value="Aragua">Aragua</option>
-                            <option value="Tachira">Táchira</option>
-                        </select>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[980px] text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th scope="col" class="px-5 py-3">Dispositivo / sede</th>
+                                <th scope="col" class="px-4 py-3">Modo</th>
+                                <th scope="col" class="px-4 py-3">Conectividad</th>
+                                <th scope="col" class="px-4 py-3">Latencia (ms)</th>
+                                <th scope="col" class="px-4 py-3">Ancho de banda (Mbps)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSimulacion" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="px-5 py-12 text-center text-slate-500">Cargando inventario...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="space-y-1">
+                        <p id="mensajeSimulacion" class="text-sm text-slate-600" role="status" aria-live="polite">Los campos manuales se activan al elegir ese modo.</p>
+                        <a id="linkHistorial" href="historial-simulaciones.html" class="hidden text-sm font-semibold text-sky-700 hover:text-sky-900">Ver historial de simulaciones</a>
                     </div>
-
-                    <div>
-                        <label for="simDispositivo">Dispositivo</label>
-                        <select id="simDispositivo" name="dispositivo" required>
-                            <option value="">Primero selecciona una sede</option>
-                        </select>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <button id="btnReiniciarHistorial" type="button" class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
+                            Reiniciar historial
+                        </button>
+                        <button id="btnGuardarSimulacion" type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-60">
+                            Confirmar y guardar simulación
+                        </button>
                     </div>
-
-                    <div>
-                        <label for="simEscenario">Escenario</label>
-                        <select id="simEscenario" name="escenario" required>
-                            <option value="">Selecciona un escenario</option>
-                            <option value="caida">Caída del dispositivo</option>
-                            <option value="latencia">Latencia alta</option>
-                            <option value="saturacion">Saturación de ancho de banda</option>
-                            <option value="intermitente">Conexión intermitente</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="simDuracion">Duración (segundos)</label>
-                        <input type="number" id="simDuracion" name="duracion" min="5" max="300" value="30" required>
-                    </div>
-                </fieldset>
-
-                <div>
-                    <button type="submit" id="btnIniciarSimulacion">Iniciar simulación</button>
-                    <button type="button" id="btnDetenerSimulacion" disabled>Detener</button>
                 </div>
             </form>
-
-            <!-- Estado actual -->
-            <div>
-                <h2>Estado de la simulación</h2>
-                <p>Estado: <strong id="simEstado">Inactiva</strong></p>
-                <p>Tiempo restante: <span id="simTiempo">--</span></p>
-                <progress id="simProgreso" value="0" max="100"></progress>
-            </div>
-
-            <!-- Resultados en vivo -->
-            <div>
-                <h2>Resultados</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Hora</th>
-                            <th>Dispositivo</th>
-                            <th>Estado</th>
-                            <th>BW</th>
-                            <th>Latencia</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaResultados">
-                        <tr>
-                            <td colspan="5">Aún no hay resultados.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Registro de eventos -->
-            <div>
-                <h2>Registro de eventos</h2>
-                <ul id="logSimulacion">
-                    <li>Esperando inicio de simulación...</li>
-                </ul>
-            </div>
-
         </section>
     </main>
-
-    <footer>
-        <p>Universidad Bicentenaria de Aragua - Facultad de Ingeniería - Escuela de Ingeniería de Sistemas</p>
-    </footer>
-
-    <script src="../JS/panelControl.js"></script>
+    <script type="module" src="../JS/simulacion.js"></script>
 </body>
 </html>

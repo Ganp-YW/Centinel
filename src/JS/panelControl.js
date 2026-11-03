@@ -117,6 +117,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         usuario = data.usuario;
+        const vistaMonitoreo = document.querySelector('main[data-sede]');
+        if (vistaMonitoreo && !['Tecnico', 'Técnico'].includes(usuario.rol)) {
+            window.location.href = 'Panel%20de%20control.html';
+            return;
+        }
         sessionStorage.setItem('usuarioActivo', JSON.stringify(usuario));
         renderizarUsuario(usuario);
     } catch (err) {
@@ -137,6 +142,10 @@ function renderizarUsuario(usuario) {
     if (!usuario) return;
 
     const rolNormalizado = (usuario.rol === 'Tecnico' || usuario.rol === 'Técnico') ? 'Técnico' : usuario.rol;
+    const menuReportesItem = document.getElementById('menuReportesItem');
+    if (menuReportesItem && rolNormalizado === 'Gerente') {
+        menuReportesItem.classList.remove('hidden');
+    }
     document.title = `Centinel - ${rolNormalizado} (${usuario.nombre})`;
 
     const badgeRol = document.getElementById('badgeRol');
@@ -186,12 +195,24 @@ function renderizarUsuario(usuario) {
 // Cargar dispositivos desde el backend o respaldo
 async function cargarDispositivos() {
     try {
-        const res = await fetch('../PHP/obtenerDispositivos.php');
+        const vistaSede = document.querySelector('main[data-sede]');
+        const url = vistaSede
+            ? `../PHP/obtenerSimulacion.php?sede=${encodeURIComponent(vistaSede.dataset.sede)}`
+            : '../PHP/obtenerDispositivos.php';
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Respuesta inválida del servidor');
         const data = await res.json();
 
         if (data.success && Array.isArray(data.dispositivos) && data.dispositivos.length > 0) {
-            todosLosDispositivos = data.dispositivos;
+            todosLosDispositivos = vistaSede
+                ? data.dispositivos.map(dispositivo => ({
+                    ...dispositivo,
+                    status: Number(dispositivo.conectividad),
+                    BW_dispositivo: Number(dispositivo.ancho_banda),
+                    latencia_dispositivo: Number(dispositivo.latencia),
+                    fecha: dispositivo.fecha_registro
+                }))
+                : data.dispositivos;
         } else {
             todosLosDispositivos = DISPOSITIVOS_POR_DEFECTO;
         }

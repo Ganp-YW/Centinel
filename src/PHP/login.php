@@ -18,6 +18,10 @@ function responder($success, $message, $datosExtra = [])
     exit;
 }
 
+if (!($conexion instanceof mysqli) || $conexion->connect_error) {
+    responder(false, "No fue posible conectarse a la base de datos. Inténtalo más tarde.");
+}
+
 function buscarUsuario($conexion, $identificador)
 {
     $sql = "SELECT id_usuario, name_usu, email, passw, type
@@ -78,4 +82,3 @@ responder(true, "Inicio de sesión exitoso.", [
         'rol'    => $usuario['type']
     ]
 ]);
-

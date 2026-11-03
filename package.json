@@ -22,5 +22,9 @@
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
     "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "chart.js": "4.4.7",
+    "jspdf": "2.5.2"
   }
 }

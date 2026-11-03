@@ -94,29 +94,13 @@ try {
     }
 
     if (isset($conexion) && $conexion instanceof mysqli && !$conexion->connect_error) {
-        $sql = "SELECT d.id_dispositivo, d.name_dispositivo, d.ip_dispositivo, d.status, 
-                       d.BW_dispositivo, d.latencia_dispositivo, d.fecha, 
-                       COALESCE(s.name_sede, 'Sin Asignar') AS sede
-                FROM dispositivo d
-                LEFT JOIN sede_dispositivo sd ON d.id_dispositivo = sd.id_dispositivo
-                LEFT JOIN sede s ON sd.id_sede = s.id_sede";
-        
-        if (!empty($sedeFiltro) && strtolower($sedeFiltro) !== 'todas') {
-            $sedeSegura = mysqli_real_escape_string($conexion, $sedeFiltro);
-            $sql .= " WHERE LOWER(s.name_sede) = LOWER('{$sedeSegura}')";
-        }
-        $sql .= " ORDER BY d.id_dispositivo ASC";
+        require_once __DIR__ . '/../Modelos/Dispositivo.php';
+        $dispositivosBD = array_map(
+            static fn(Dispositivo $dispositivo): array => $dispositivo->toArray(),
+            Dispositivo::listar($conexion, $sedeFiltro)
+        );
 
-        $res = @mysqli_query($conexion, $sql);
-        if ($res && mysqli_num_rows($res) > 0) {
-            $dispositivosBD = [];
-            while ($fila = mysqli_fetch_assoc($res)) {
-                $fila['status'] = (int) $fila['status'];
-                $fila['BW_dispositivo'] = (float) $fila['BW_dispositivo'];
-                $fila['latencia_dispositivo'] = (int) $fila['latencia_dispositivo'];
-                $dispositivosBD[] = $fila;
-            }
-
+        if (count($dispositivosBD) > 0) {
             echo json_encode([
                 'success' => true,
                 'origen'  => 'bd',
@@ -127,7 +111,7 @@ try {
         }
     }
 } catch (Throwable $e) {
-    // Si ocurre un error, continuar con datos por defecto
+    error_log('No se pudo consultar el inventario de dispositivos: ' . $e->getMessage());
 }
 
 // Filtrar datos por defecto si se especificó sede
@@ -144,4 +128,3 @@ echo json_encode([
     'total'   => count($resultado),
     'dispositivos' => $resultado
 ]);
-

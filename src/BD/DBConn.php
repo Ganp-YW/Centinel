@@ -7,10 +7,7 @@ $usuario = "root";
 $password = "";
 $bd = "centinel";
 
-$conexion = mysqli_connect($host, $usuario, $password, $bd);
-
-if(!$conexion){
-    die("Error: ".mysqli_connect_error());
-}
+mysqli_report(MYSQLI_REPORT_OFF);
+$conexion = @mysqli_connect($host, $usuario, $password, $bd);
 
 ?>

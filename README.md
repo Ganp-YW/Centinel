@@ -14,7 +14,10 @@ La estructura base del proyecto, su árbol de archivos y sus rutas iniciales fue
 centinel/
 ├── public/                     # Recursos públicos y estáticos del navegador
 │   ├── favicon.svg             # Ícono principal de la aplicación
-│   └── icons.svg               # Colección de íconos vectoriales SVG
+│   ├── icons.svg               # Colección de íconos vectoriales SVG
+│   └── vendor/                 # Librerías locales para usar el dashboard sin CDN
+│       ├── chart.umd.js        # Distribución local de Chart.js
+│       └── jspdf.umd.min.js    # Distribución local de jsPDF
 │
 ├── src/                        # Código fuente de la aplicación
 │   ├── assets/                 # Recursos multimedia, íconos y avatares
@@ -22,12 +25,16 @@ centinel/
 │   │   ├── avatar_tecnico.svg  # Avatar vectorial de soporte para rol Técnico
 │   │   ├── hero.png            # Imagen ilustrativa
 │   │   ├── javascript.svg      # Ícono oficial de JavaScript
-│   │   ├── security.svg        # Ícono SVG de seguridad y soporte
+│   │   ├── security.svg         # Ícono SVG de seguridad y soporte
 │   │   └── vite.svg            # Logo de la plataforma
 │   │
 │   ├── BD/                     # Capa de datos y conexión a Base de Datos
 │   │   ├── DBConn.php          # Script de conexión MySQLi a MariaDB/MySQL
 │   │   └── obtenerDatos.php    # Endpoint de consulta de usuarios en BD
+│   ├── Modelos/                # Modelos orientados a objetos que representan datos relacionales
+│   │   ├── Dispositivo.php     # Consulta de inventario y objetos Dispositivo
+│   │   ├── Simulacion.php      # Registro/lectura de mediciones históricas
+│   │   └── Reporte.php         # Métricas mensuales por sede o dispositivo
 │   │
 │   ├── CSS/                    # Estilos del proyecto y configuración de Tailwind CSS
 │   │   ├── input.css           # Archivo CSS de entrada (@import "tailwindcss";)
@@ -36,16 +43,26 @@ centinel/
 │   ├── JS/                     # Scripts cliente en JavaScript
 │   │   ├── main.js             # Punto de entrada modular del frontend
 │   │   ├── panelControl.js     # Lógica dinámica del panel de control, avatar y sesión
+│   │   ├── simulacion.js       # Configuración manual/automática y envío de simulaciones
+│   │   ├── reportes.js         # Gráficos, comparación mensual y exportación PDF
+│   │   ├── historialSimulaciones.js # Tabla paginada del historial de mediciones
 │   │   └── validarFormulario.js# Intercepción y envío asíncrono (Fetch API) de credenciales
 │   │
 │   ├── PHP/                    # Lógica del servidor, endpoints y controladores
 │   │   ├── login.php           # API de autenticación, creación de sesión y redirección
 │   │   ├── logout.php          # Cierre seguro y destrucción de sesión PHP
 │   │   ├── obtenerDispositivos.php # API para consultar inventario de red, métricas y sedes
+│   │   ├── obtenerSimulacion.php   # Última medición por dispositivo (monitoreo técnico)
+│   │   ├── obtenerHistorialSimulaciones.php # Historial paginado de todas las mediciones
+│   │   ├── guardarSimulacion.php   # Guarda una tanda de mediciones en una transacción
+│   │   ├── obtenerReportes.php     # Reportes mensuales protegidos para Gerente
 │   │   └── obtenerSesion.php   # Endpoint para validar autenticación y datos de usuario activo
 │   │
 │   └── Vistas/                 # Vistas y paneles de control
-│       └── Panel de control.html # Vista unificada que se adapta según el rol conectado
+│       ├── Panel de control.html # Vista unificada que se adapta según el rol conectado
+│       ├── simulacion.html       # Tabla de simulación para Gerente y Técnico
+│       ├── historial-simulaciones.html # Historial completo paginado
+│       └── reportes.html         # Dashboard gráfico exclusivo para Gerente
 │
 ├── centinel.sql                # Script de inicialización y estructura de la BD
 ├── index.html                  # Vista inicial y formulario de autenticación (Login)
@@ -85,6 +102,16 @@ Estructura relacional diseñada para soportar:
 - `sede`: Ubicaciones físicas o sucursales de la organización (Miranda, Aragua, Táchira, etc.).
 - `dispositivo`: Equipos de red con métricas de ancho de banda (`BW_dispositivo`), latencia y estado.
 - `sede_dispositivo`: Tabla intermedia que asocia dispositivos a sus respectivas sedes.
+- `simulacion`: Historial append-only de cada medición (`id_simulacion`, `id_dispositivo`, `conectividad`, `latencia`, `ancho_banda`, `modo`, `fecha_registro`). Se crea junto con el resto del esquema en `centinel.sql`; tiene clave foránea al dispositivo e índices por dispositivo/fecha y fecha. `conectividad` usa `TINYINT(1)` (equivalente práctico a `BOOLEAN`), las métricas son `FLOAT` y `fecha_registro` es `TIMESTAMP`.
+
+Selecciona o crea la base `centinel` en MariaDB e importa únicamente `centinel.sql` para cargar todo el esquema y los datos de demostración, incluido el historial de simulaciones de octubre de 2026. El modo de demostración en memoria continúa disponible si no se puede conectar a la base de datos.
+
+### Módulos de simulación y reportes
+- La simulación presenta el inventario de todas las sedes, permite mezclar modos automáticos y manuales por dispositivo y envía el lote JSON a `guardarSimulacion.php`. Sin conexión a MariaDB, las respuestas se identifican explícitamente como `origen: "memoria"` y no prometen persistencia.
+- El módulo `historial-simulaciones.html` lista las mediciones registradas en orden cronológico inverso, permite filtrar por sede y pagina todo el historial; en modo memoria, las simulaciones de demostración se conservan en la sesión actual.
+- El monitoreo por sede consulta `obtenerSimulacion.php`, que obtiene la medición más reciente por `fecha_registro` (y usa el id como desempate).
+- El dashboard de reportes ofrece comparación mensual, gráficos Chart.js y exportación PDF mediante jsPDF, que incluye los canvas renderizados para conservar los gráficos. Las distribuciones se sirven localmente desde `public/vendor/`, por lo que la vista no depende de CDN ni de conexión a internet. El endpoint de reportes y su vista requieren sesión de Gerente.
+- Las consultas de inventario, historial y métricas convierten las filas de MariaDB en instancias de los modelos PHP en `src/Modelos/`.
 
 ---
 
