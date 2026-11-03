@@ -137,6 +137,7 @@ Selecciona o crea la base `centinel` en MariaDB e importa únicamente `centinel.
 - **Base de Datos:** MariaDB / MySQL.
 - **Gestor de Paquetes:** `pnpm`.
 - **Framework CSS:** Tailwind CSS v4 (`@tailwindcss/cli`).
+- **Gráficas y reportes:** Chart.js `4.4.7` para el tacómetro y las gráficas del dashboard; jsPDF `2.5.2` para exportar los reportes a PDF. Ambas dependencias están declaradas en `package.json`.
 
 ---
 
@@ -147,6 +148,7 @@ Para recrear la carpeta `node_modules` en una nueva máquina o entorno de evalua
 ```bash
 pnpm install
 ```
+Este comando instala también Chart.js y jsPDF junto con Tailwind CSS. La vista de reportes carga las distribuciones UMD locales desde `public/vendor/`, por lo que no necesita CDN en tiempo de ejecución.
 
 ### 2. Procesamiento de Estilos con Tailwind
 Para compilar y escuchar cambios en las clases de Tailwind CSS en tiempo real:
