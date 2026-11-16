@@ -2,30 +2,6 @@ const $ = (id) => document.getElementById(id);
 const meses = new Set();
 const colores = ['#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#14b8a6'];
 const graficos = {};
-const agujaTacometro = {
-    id: 'agujaTacometro',
-    afterDatasetsDraw(chart) {
-        const arco = chart.getDatasetMeta(0).data[0];
-        if (!arco) return;
-
-        const valor = Number(chart.data.datasets[0].data[0]);
-        const angulo = arco.startAngle + Math.PI * (Math.max(0, Math.min(100, valor)) / 100);
-        const radio = arco.outerRadius * 0.78;
-        const { ctx } = chart;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(arco.x, arco.y);
-        ctx.lineTo(arco.x + Math.cos(angulo) * radio, arco.y + Math.sin(angulo) * radio);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#0f172a';
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(arco.x, arco.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#0f172a';
-        ctx.fill();
-        ctx.restore();
-    }
-};
 let datosReporte = null;
 let entidadSeleccionada = '';
 let solicitudReporte = null;
@@ -199,28 +175,36 @@ function actualizarDisponibilidad() {
 }
 
 function actualizarLatencia() {
-    const mes = obtenerMesActivo();
-    const registro = datosReporte?.datos?.[mes];
-    if (!registro) return;
-    const valores = registro.latencia_promedio.map(Number).filter(Number.isFinite);
-    const promedio = valores.length ? valores.reduce((total, valor) => total + valor, 0) / valores.length : 0;
-    const valorGrafico = Math.min(100, Math.max(0, promedio));
-    $('valorLatencia').textContent = `${promedio.toFixed(1)} ms`;
-    $('subtituloLatencia').textContent = `Promedio de ${registro.labels.length} ${datosReporte.tipo === 'global' ? 'sedes' : 'dispositivos'} · ${mes}`;
+    const mesesOrdenados = Object.keys(datosReporte?.datos || {}).sort();
+    const primera = datosReporte?.datos?.[mesesOrdenados[0]];
+    if (!primera) return;
+
+    const etiquetas = primera.labels || [];
+    $('subtituloLatencia').textContent = `Comparativa de ${etiquetas.length} ${datosReporte.tipo === 'global' ? 'sedes' : 'dispositivos'} · ${mesesOrdenados.join(', ')}`;
+
+    const datasets = mesesOrdenados.map((mes, indice) => ({
+        label: mes,
+        data: etiquetas.map((etiqueta) => {
+            const reporteMes = datosReporte.datos[mes];
+            const posicion = reporteMes.labels.indexOf(etiqueta);
+            return posicion >= 0 ? Number(reporteMes.latencia_promedio[posicion]) : 0;
+        }),
+        backgroundColor: colores[indice % colores.length],
+        borderRadius: 5
+    }));
 
     reemplazarGrafico('latencia', $('graficoLatencia'), {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [valorGrafico, 100 - valorGrafico],
-                backgroundColor: [promedio <= 30 ? '#10b981' : promedio <= 60 ? '#f59e0b' : '#ef4444', '#e2e8f0'],
-                borderWidth: 0,
-                circumference: 180,
-                rotation: 270
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '78%', rotation: 270, circumference: 180, plugins: { legend: { display: false }, tooltip: { enabled: false } } },
-        plugins: [agujaTacometro]
+        type: 'bar',
+        data: { labels: etiquetas, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 0 } },
+                y: { beginAtZero: true, title: { display: true, text: 'Latencia (ms)' } }
+            },
+            plugins: { legend: { position: 'bottom' } }
+        }
     });
 }
 
