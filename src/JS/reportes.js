@@ -5,6 +5,9 @@ const graficos = {};
 let datosReporte = null;
 let entidadSeleccionada = '';
 let solicitudReporte = null;
+let solicitudAnalisis = null;
+let rolActivo = '';
+let analisisInicializado = false;
 
 document.addEventListener('DOMContentLoaded', iniciar);
 
@@ -16,42 +19,467 @@ async function iniciar() {
             window.location.href = '../../index.html';
             return;
         }
-        if (sesion.usuario.rol !== 'Gerente') {
+        rolActivo = sesion.usuario.rol === 'Tecnico' || sesion.usuario.rol === 'Técnico'
+            ? 'Técnico'
+            : sesion.usuario.rol;
+        if (!['Gerente', 'Técnico'].includes(rolActivo)) {
             window.location.href = 'Panel%20de%20control.html';
             return;
         }
-        $('headerUserName').textContent = `${sesion.usuario.nombre} · Gerente`;
+        $('headerUserName').textContent = `${sesion.usuario.nombre} · ${rolActivo}`;
+        $('badgeRol').textContent = rolActivo === 'Gerente' ? 'Gerencia' : rolActivo;
+        $('headerAvatarImg').src = rolActivo === 'Gerente' ? '../assets/avatar_gerente.svg' : '../assets/avatar_tecnico.svg';
+        $('headerAvatarImg').alt = `Avatar ${rolActivo}`;
     } catch (error) {
         $('mensajeReporte').textContent = 'No se pudo validar la sesión. Inicia sesión nuevamente.';
         return;
     }
 
-    if (typeof Chart === 'undefined' || !window.jspdf?.jsPDF) {
-        $('mensajeReporte').textContent = 'No se pudieron cargar las librerías de gráficos/PDF. Verifica la conexión a internet.';
-        return;
-    }
-
-    const ahora = new Date();
-    const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
-    $('mesComparacion').value = mesActual;
-    agregarMes(mesActual);
-
-    $('btnAgregarMes').addEventListener('click', () => agregarMes($('mesComparacion').value));
-    $('btnActualizar').addEventListener('click', cargarReporte);
-    $('tipoReporte').addEventListener('change', () => {
-        $('campoSede').classList.toggle('hidden', $('tipoReporte').value === 'global');
-        cargarReporte();
+    const esGerente = rolActivo === 'Gerente';
+    $('tabDashboard').classList.toggle('hidden', !esGerente);
+    $('btnExportarPDF').hidden = !esGerente;
+    const hashInicial = window.location.hash;
+    seleccionarPestana(esGerente && hashInicial !== '#anomalias' ? 'dashboard' : 'anomalias');
+    document.querySelectorAll('[data-report-tab]').forEach((boton) => {
+        boton.addEventListener('click', () => seleccionarPestana(boton.dataset.reportTab));
     });
-    $('sedeReporte').addEventListener('change', cargarReporte);
-    $('entidadDisponibilidad').addEventListener('change', (evento) => {
-        entidadSeleccionada = evento.target.value;
-        actualizarDisponibilidad();
-    });
-    $('btnExportarPDF').addEventListener('click', exportarPDF);
     $('btnCerrarSesion').addEventListener('click', cerrarSesion);
-    cargarReporte();
+
+    if (esGerente) {
+        inicializarAnalisis();
+        if (typeof Chart === 'undefined' || !window.jspdf?.jsPDF) {
+            $('mensajeReporte').textContent = 'No se pudieron cargar las librerías de gráficos/PDF. El registro de anomalías sigue disponible.';
+            $('mensajeReporte').className = 'ml-auto text-sm font-semibold text-amber-700';
+        } else {
+            const ahora = new Date();
+            const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+            $('mesComparacion').value = mesActual;
+            agregarMes(mesActual);
+
+            $('btnAgregarMes').addEventListener('click', () => agregarMes($('mesComparacion').value));
+            $('btnActualizar').addEventListener('click', cargarReporte);
+            $('tipoReporte').addEventListener('change', () => {
+                $('campoSede').classList.toggle('hidden', $('tipoReporte').value === 'global');
+                cargarReporte();
+            });
+            $('sedeReporte').addEventListener('change', cargarReporte);
+            $('entidadDisponibilidad').addEventListener('change', (evento) => {
+                entidadSeleccionada = evento.target.value;
+                actualizarDisponibilidad();
+            });
+            $('btnExportarPDF').addEventListener('click', exportarPDF);
+        }
+    }
 }
 
+function seleccionarPestana(nombre) {
+    const activa = nombre === 'dashboard' && rolActivo === 'Gerente' ? 'dashboard' : 'anomalias';
+    window.history.replaceState(null, '', `#${activa}`);
+    const esDashboard = activa === 'dashboard';
+    $('panelDashboard').classList.toggle('hidden', !esDashboard);
+    $('panelAnomalias').classList.toggle('hidden', esDashboard);
+    $('tabDashboard').setAttribute('aria-selected', String(esDashboard));
+    $('tabAnomalias').setAttribute('aria-selected', String(!esDashboard));
+    $('tabDashboard').classList.toggle('border-sky-700', esDashboard);
+    $('tabDashboard').classList.toggle('text-sky-800', esDashboard);
+    $('tabDashboard').classList.toggle('border-transparent', !esDashboard);
+    $('tabDashboard').classList.toggle('text-slate-500', !esDashboard);
+    $('tabAnomalias').classList.toggle('border-sky-700', !esDashboard);
+    $('tabAnomalias').classList.toggle('text-sky-800', !esDashboard);
+    $('tabAnomalias').classList.toggle('border-transparent', esDashboard);
+    $('tabAnomalias').classList.toggle('text-slate-500', esDashboard);
+}
+
+function fechaLocal(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function establecerRangoAnalisis() {
+    const hoy = new Date();
+    const desde = new Date(hoy);
+    const granularidad = $('granularidadAnalisis').value;
+    if (granularidad === 'mes') {
+        desde.setMonth(desde.getMonth() - 11);
+        desde.setDate(1);
+    }
+    else if (granularidad === 'semana') desde.setDate(desde.getDate() - 83);
+    else if (granularidad === 'dia') desde.setDate(desde.getDate() - 29);
+    else if (granularidad === 'hora') desde.setDate(desde.getDate() - 1);
+    $('desdeAnalisis').value = fechaLocal(desde);
+    $('hastaAnalisis').value = fechaLocal(hoy);
+}
+
+function inicializarAnalisis() {
+    if (analisisInicializado) return;
+    analisisInicializado = true;
+    if (typeof Chart === 'undefined') {
+        $('mensajeAnalisis').textContent = 'No se pudo cargar la librería de gráficos.';
+        $('mensajeAnalisis').className = 'text-sm font-semibold text-red-700';
+        return;
+    }
+    establecerRangoAnalisis();
+    $('granularidadAnalisis').addEventListener('change', () => {
+        establecerRangoAnalisis();
+        cargarAnalisis();
+    });
+    $('sedeAnalisis').addEventListener('change', filtrarDispositivosAnalisis);
+    $('btnActualizarAnalisis').addEventListener('click', cargarAnalisis);
+    cargarAnalisis();
+}
+
+async function cargarAnalisis() {
+    const desde = $('desdeAnalisis').value;
+    const hasta = $('hastaAnalisis').value;
+    if (!desde || !hasta || desde > hasta) {
+        $('mensajeAnalisis').textContent = 'Selecciona un rango de fechas válido.';
+        $('mensajeAnalisis').className = 'text-sm font-semibold text-red-700';
+        return;
+    }
+    const parametros = new URLSearchParams({
+        granularidad: $('granularidadAnalisis').value,
+        desde,
+        hasta,
+        id_sede: $('sedeAnalisis').value,
+        id_dispositivo: $('dispositivoAnalisis').value
+    });
+    solicitudAnalisis?.abort();
+    const solicitudActual = new AbortController();
+    solicitudAnalisis = solicitudActual;
+    const boton = $('btnActualizarAnalisis');
+    boton.disabled = true;
+    $('mensajeAnalisis').textContent = 'Calculando estadísticas del historial...';
+    $('mensajeAnalisis').className = 'text-sm text-slate-500';
+
+    try {
+        const respuesta = await fetch(`../PHP/obtenerAnalisisSimulacion.php?${parametros}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal: solicitudActual.signal
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok || !datos.success) {
+            throw new Error(datos.mensaje || 'No se pudo calcular el análisis.');
+        }
+        actualizarOpcionesAnalisis(datos.opciones);
+        actualizarResumenAnalisis(datos.periodos);
+        actualizarGraficosAnalisis(datos.periodos, datos.muestras || []);
+        const origen = datos.origen === 'memoria' ? 'memoria de esta sesión; no está guardado en la base de datos' : 'base de datos';
+        const detalleSerie = datos.periodos.length === 1
+            ? ` · ${datos.muestras.length} mediciones graficadas en orden cronológico${datos.muestras_limitadas ? ' (máximo 1000)' : ''}`
+            : '';
+        $('mensajeAnalisis').textContent = datos.periodos.length
+            ? `${datos.periodos.length} intervalos${detalleSerie} · datos de ${origen}.`
+            : `No hay mediciones para estos filtros y fechas · origen: ${origen}.`;
+        $('mensajeAnalisis').className = `text-sm ${datos.origen === 'memoria' ? 'text-amber-700' : 'text-emerald-700'}`;
+    } catch (error) {
+        if (error.name === 'AbortError') return;
+        $('mensajeAnalisis').textContent = error.message || 'No se pudo cargar el análisis.';
+        $('mensajeAnalisis').className = 'text-sm font-semibold text-red-700';
+    } finally {
+        if (solicitudAnalisis === solicitudActual) boton.disabled = false;
+    }
+}
+
+function actualizarOpcionesAnalisis(opciones = {}) {
+    const sedeActual = $('sedeAnalisis').value;
+    const sedes = opciones.sedes || [];
+    $('sedeAnalisis').innerHTML = '<option value="">Todas las sedes</option>' + sedes.map((sede) =>
+        `<option value="${escaparHTML(sede.id)}">${escaparHTML(sede.nombre)}</option>`
+    ).join('');
+    if (sedes.some((sede) => String(sede.id) === sedeActual)) $('sedeAnalisis').value = sedeActual;
+
+    const dispositivoActual = $('dispositivoAnalisis').value;
+    $('dispositivoAnalisis').dataset.opciones = JSON.stringify(opciones.dispositivos || []);
+    filtrarDispositivosAnalisis();
+    if ([...$('dispositivoAnalisis').options].some((opcion) => opcion.value === dispositivoActual)) {
+        $('dispositivoAnalisis').value = dispositivoActual;
+    }
+}
+
+function filtrarDispositivosAnalisis() {
+    let dispositivos = [];
+    try {
+        dispositivos = JSON.parse($('dispositivoAnalisis').dataset.opciones || '[]');
+    } catch (error) {
+        console.error('No se pudieron leer las opciones de dispositivos del análisis.', error);
+    }
+    const sede = $('sedeAnalisis').value;
+    const actual = $('dispositivoAnalisis').value;
+    const visibles = dispositivos.filter((dispositivo) => !sede || String(dispositivo.id_sede ?? '') === sede);
+    $('dispositivoAnalisis').innerHTML = '<option value="">Todos los dispositivos</option>' + visibles.map((dispositivo) =>
+        `<option value="${escaparHTML(dispositivo.id)}">${escaparHTML(dispositivo.nombre)}${dispositivo.sede ? ` · ${escaparHTML(dispositivo.sede)}` : ''}</option>`
+    ).join('');
+    if (visibles.some((dispositivo) => String(dispositivo.id) === actual)) $('dispositivoAnalisis').value = actual;
+}
+
+function actualizarResumenAnalisis(periodos) {
+    const total = periodos.reduce((suma, periodo) => suma + periodo.total, 0);
+    const conectados = periodos.reduce((suma, periodo) => suma + periodo.conectados, 0);
+    $('totalMedicionesAnalisis').textContent = total.toLocaleString('es');
+    $('probabilidadAnalisis').textContent = total ? `${(100 * conectados / total).toFixed(1)}%` : '—';
+    $('automaticasAnalisis').textContent = periodos.reduce((suma, periodo) => suma + periodo.automaticos, 0).toLocaleString('es');
+    $('manualesAnalisis').textContent = periodos.reduce((suma, periodo) => suma + periodo.manuales, 0).toLocaleString('es');
+}
+
+function actualizarGraficosAnalisis(periodos, muestras) {
+    const usarSerieMuestras = periodos.length === 1 && muestras.length > 0;
+    const puntos = usarSerieMuestras ? crearIntervalosGraficos(muestras) : periodos;
+    const etiquetas = usarSerieMuestras ? puntos.map((punto) => punto.etiqueta) : puntos.map((punto) => punto.periodo);
+    const textoPeriodo = usarSerieMuestras
+        ? 'Por bloque cronológico de mediciones'
+        : 'Por intervalo seleccionado';
+
+    $('graficoProbabilidadAnalisis').parentElement.parentElement.querySelector('p').textContent =
+        `${textoPeriodo}: barras con la proporción real y línea Beta suavizada en ventanas de 3 bloques.`;
+    $('graficoLatenciaAnalisis').parentElement.parentElement.querySelector('p').textContent =
+        `${textoPeriodo}: media por bloque y mediana móvil; los huecos breves estimados no son mediciones.`;
+    $('graficoAnchoBandaAnalisis').parentElement.parentElement.querySelector('p').textContent =
+        `${textoPeriodo}: media por bloque y mediana móvil; escala logarítmica si hay valores extremos.`;
+
+    const nConectividad = puntos.map((punto) => punto.total ?? punto.n ?? 0);
+    const conectados = puntos.map((punto) => punto.conectados ?? 0);
+    const probabilidadSuavizada = puntos.map((_, indice) => {
+        const inicio = Math.max(0, indice - 1);
+        const fin = Math.min(puntos.length - 1, indice + 1);
+        const exitos = conectados.slice(inicio, fin + 1).reduce((suma, cantidad) => suma + cantidad, 0);
+        const muestra = nConectividad.slice(inicio, fin + 1).reduce((suma, cantidad) => suma + cantidad, 0);
+        return muestra ? 100 * (exitos + 1) / (muestra + 2) : null;
+    });
+    reemplazarGrafico('analisisProbabilidad', $('graficoProbabilidadAnalisis'), {
+        type: 'bar',
+        data: {
+            labels: etiquetas,
+            datasets: [{
+                label: 'Probabilidad observada de conexión (%)',
+                data: puntos.map((punto) => 100 * (punto.probabilidad_conectado ?? punto.probabilidad)),
+                backgroundColor: 'rgba(5, 150, 105, 0.72)',
+                borderColor: '#047857',
+                borderWidth: 1,
+                borderRadius: 4,
+                maxBarThickness: 42
+            }, {
+                type: 'line',
+                label: 'Tendencia Beta suavizada (3 bloques)',
+                data: probabilidadSuavizada,
+                borderColor: '#0f172a',
+                backgroundColor: '#0f172a',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.35
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 12 } },
+                y: { min: 0, max: 100, title: { display: true, text: 'Conexión exitosa (%)' } }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => usarSerieMuestras ? puntos[items[0]?.dataIndex]?.rango : items[0]?.label,
+                        afterLabel: (item) => `${puntos[item.dataIndex].conectados} de ${nConectividad[item.dataIndex]} mediciones conectadas`
+                    }
+                }
+            }
+        }
+    });
+
+    crearGraficoSerieVariable(
+        'analisisLatencia',
+        'graficoLatenciaAnalisis',
+        etiquetas,
+        puntos,
+        usarSerieMuestras ? 'media_latencia' : 'media_latencia',
+        usarSerieMuestras ? 'n_latencia' : 'n_latencia',
+        'Latencia media (ms)',
+        '#0284c7',
+        usarSerieMuestras,
+        false
+    );
+    crearGraficoSerieVariable(
+        'analisisAnchoBanda',
+        'graficoAnchoBandaAnalisis',
+        etiquetas,
+        puntos,
+        'media_ancho_banda',
+        'n_ancho_banda',
+        'Ancho de banda medio (Mbps)',
+        '#8b5cf6',
+        usarSerieMuestras,
+        true
+    );
+}
+
+function crearIntervalosGraficos(muestras, maxIntervalos = 12) {
+    const tamanoIntervalo = Math.ceil(muestras.length / maxIntervalos);
+    const intervalos = [];
+    for (let inicio = 0; inicio < muestras.length; inicio += tamanoIntervalo) {
+        const lote = muestras.slice(inicio, inicio + tamanoIntervalo);
+        const conectadas = lote.filter((muestra) => muestra.conectividad === 1);
+        const latencias = conectadas.map((muestra) => muestra.latencia).filter((valor) => valor > 0);
+        const anchos = conectadas.map((muestra) => muestra.ancho_banda).filter((valor) => valor > 0);
+        const fechaInicio = lote[0].fecha_registro;
+        const fechaFin = lote[lote.length - 1].fecha_registro;
+        const mismoDia = fechaInicio.slice(0, 10) === fechaFin.slice(0, 10);
+        const horaInicio = fechaInicio.slice(11, 16);
+        const horaFin = fechaFin.slice(11, 16);
+        intervalos.push({
+            etiqueta: mismoDia ? `${horaInicio}–${horaFin}` : `${fechaInicio.slice(5, 16)}–${fechaFin.slice(5, 16)}`,
+            rango: `${fechaInicio} – ${fechaFin}`,
+            n: lote.length,
+            conectados: conectadas.length,
+            probabilidad: conectadas.length / lote.length,
+            n_latencia: latencias.length,
+            media_latencia: latencias.length ? latencias.reduce((suma, valor) => suma + valor, 0) / latencias.length : null,
+            n_ancho_banda: anchos.length,
+            media_ancho_banda: anchos.length ? anchos.reduce((suma, valor) => suma + valor, 0) / anchos.length : null
+        });
+    }
+    return intervalos;
+}
+
+function crearGraficoSerieVariable(clave, canvasId, etiquetas, puntos, campoMedia, campoMuestra, titulo, color, usarSerieMuestras, permitirEscalaLogaritmica) {
+    const observados = puntos.map((punto) => punto[campoMedia]);
+    const tendencia = observados.map((_, indice) => {
+        const inicio = Math.max(0, indice - 1);
+        const fin = Math.min(observados.length - 1, indice + 1);
+        const valores = observados.slice(inicio, fin + 1)
+            .filter((valor) => Number.isFinite(valor) && valor > 0)
+            .sort((a, b) => a - b);
+        if (Number.isFinite(observados[indice]) && observados[indice] > 0) {
+            return valores[Math.floor(valores.length / 2)];
+        }
+        const anterior = observados[indice - 1];
+        const siguiente = observados[indice + 1];
+        return Number.isFinite(anterior) && anterior > 0 && Number.isFinite(siguiente) && siguiente > 0
+            ? (anterior + siguiente) / 2
+            : null;
+    });
+    const positivos = observados.filter((valor) => Number.isFinite(valor) && valor > 0).sort((a, b) => a - b);
+    const mediana = positivos.length ? positivos[Math.floor(positivos.length / 2)] : 0;
+    const maximo = positivos.at(-1) ?? 0;
+    const usarLogaritmica = permitirEscalaLogaritmica && positivos.length > 1 && mediana > 0 && maximo / mediana >= 10;
+    const escala = {
+        beginAtZero: !usarLogaritmica,
+        ...(usarLogaritmica ? {
+            type: 'logarithmic',
+            min: Math.max(Number.MIN_VALUE, positivos[0] / 1.5),
+            max: maximo * 1.5,
+            ticks: {
+                callback: (valor) => new Intl.NumberFormat('es', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(valor))
+            }
+        } : {})
+    };
+    if (usarLogaritmica) {
+        $('graficoAnchoBandaAnalisis').parentElement.parentElement.querySelector('p').textContent =
+            `${usarSerieMuestras ? 'Por bloque cronológico de mediciones' : 'Por intervalo seleccionado'}: escala logarítmica para distinguir valores habituales y extremos; línea de mediana móvil robusta.`;
+    }
+
+    reemplazarGrafico(clave, $(canvasId), {
+        type: 'line',
+        data: {
+            labels: etiquetas,
+            datasets: [{
+                label: titulo,
+                data: observados,
+                borderColor: color,
+                backgroundColor: `${color}22`,
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                tension: 0.3,
+                spanGaps: false,
+                fill: false
+            }, {
+                type: 'line',
+                label: 'Tendencia robusta (mediana móvil de 3 bloques)',
+                data: tendencia,
+                borderColor: '#f59e0b',
+                backgroundColor: '#f59e0b',
+                borderWidth: 3,
+                pointRadius: 1,
+                pointHoverRadius: 5,
+                tension: 0.35,
+                spanGaps: false,
+                borderDash: [6, 4]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 35, minRotation: 0 }
+                },
+                y: { ...escala, title: { display: true, text: titulo.replace('media', '').trim() } }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => usarSerieMuestras ? puntos[items[0]?.dataIndex]?.rango : items[0]?.label,
+                        afterLabel: (item) => `n = ${puntos[item.dataIndex][campoMuestra]}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoEstadisticoAnalisis(clave, canvasId, etiquetas, periodos, campoMedia, campoDesviacion, unidad, color) {
+    reemplazarGrafico(clave, $(canvasId), {
+        type: 'line',
+        data: {
+            labels: etiquetas,
+            datasets: [
+                {
+                    label: `Media (${unidad})`,
+                    data: periodos.map((periodo) => periodo[campoMedia]),
+                    borderColor: color,
+                    backgroundColor: color,
+                    tension: 0.25
+                },
+                {
+                    label: `Desviación estándar (${unidad})`,
+                    data: periodos.map((periodo) => periodo[campoDesviacion]),
+                    borderColor: '#f59e0b',
+                    backgroundColor: '#f59e0b',
+                    borderDash: [6, 4],
+                    tension: 0.25
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, title: { display: true, text: unidad } }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        afterBody: (items) => {
+                            const periodo = periodos[items[0]?.dataIndex];
+                            const muestra = campoMedia === 'media_latencia' ? periodo?.n_latencia : periodo?.n_ancho_banda;
+                            return `n = ${muestra ?? 0}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 function agregarMes(mes) {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
         $('mensajeReporte').textContent = 'Selecciona un mes válido.';

@@ -95,6 +95,52 @@ CREATE TABLE `simulacion` (
   KEY `idx_fecha_registro` (`fecha_registro`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+--
+-- Reportes de anomalías y auditoría de cambios
+--
+
+CREATE TABLE `reporte_anomalia` (
+  `id_reporte` int(11) NOT NULL AUTO_INCREMENT,
+  `tipo_objetivo` enum('sede','dispositivo') NOT NULL,
+  `id_sede` int(11) DEFAULT NULL,
+  `id_dispositivo` int(11) DEFAULT NULL,
+  `nombre_objetivo` varchar(255) NOT NULL,
+  `ip_objetivo` varchar(255) DEFAULT NULL,
+  `tipo_error` varchar(80) NOT NULL,
+  `titulo` varchar(180) NOT NULL,
+  `detalles` text NOT NULL,
+  `prioridad` enum('baja','media','alta','critica') NOT NULL DEFAULT 'media',
+  `estado` enum('pendiente','en_revision','resuelto') NOT NULL DEFAULT 'pendiente',
+  `fecha_evento` datetime NOT NULL,
+  `id_creador` int(11) DEFAULT NULL,
+  `nombre_creador` varchar(255) NOT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_reporte`),
+  KEY `idx_reporte_estado_fecha` (`estado`,`fecha_evento`),
+  KEY `idx_reporte_sede_fecha` (`id_sede`,`fecha_evento`),
+  KEY `idx_reporte_dispositivo_fecha` (`id_dispositivo`,`fecha_evento`),
+  CONSTRAINT `fk_reporte_anomalia_sede` FOREIGN KEY (`id_sede`) REFERENCES `sede` (`id_sede`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_reporte_anomalia_dispositivo` FOREIGN KEY (`id_dispositivo`) REFERENCES `dispositivo` (`id_dispositivo`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_reporte_anomalia_creador` FOREIGN KEY (`id_creador`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `historial_reporte_anomalia` (
+  `id_historial` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_reporte` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `nombre_usuario` varchar(255) NOT NULL,
+  `accion` enum('creado','editado','cambio_estado') NOT NULL,
+  `datos_anteriores` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`datos_anteriores`)),
+  `datos_nuevos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`datos_nuevos`)),
+  `fecha_cambio` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_historial`),
+  KEY `idx_historial_reporte_fecha` (`id_reporte`,`fecha_cambio`),
+  CONSTRAINT `fk_historial_reporte_anomalia` FOREIGN KEY (`id_reporte`) REFERENCES `reporte_anomalia` (`id_reporte`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_historial_reporte_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Volcado de datos para la tabla `usuario`
 --

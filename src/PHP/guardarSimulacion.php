@@ -139,11 +139,18 @@ if (isset($conexion) && $conexion instanceof mysqli && !$conexion->connect_error
 
 $fechaRegistro = date('Y-m-d H:i:s');
 $historialDemo = $_SESSION['historialSimulacionesDemo'] ?? [];
+$estadoDemo = $_SESSION['estadoDispositivosSimulacionDemo'] ?? [];
 foreach ($simulaciones as $simulacion) {
     $simulacion->fecha_registro = $fechaRegistro;
     $historialDemo[] = $simulacion->toArray();
+    $estadoDemo[$simulacion->id_dispositivo] = [
+        'status' => $simulacion->conectividad,
+        'BW_dispositivo' => $simulacion->ancho_banda,
+        'latencia_dispositivo' => $simulacion->latencia
+    ];
 }
 $_SESSION['historialSimulacionesDemo'] = $historialDemo;
+$_SESSION['estadoDispositivosSimulacionDemo'] = $estadoDemo;
 
 echo json_encode([
     'success' => true,

@@ -6,7 +6,7 @@
     <meta name="description" content="Consulta el historial completo de mediciones y simulaciones registradas.">
     <title>Centinel - Historial de simulaciones</title>
     <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.4">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
     <header class="bg-slate-900 text-white shadow-lg">
@@ -24,7 +24,9 @@
         </div>
     </header>
 
-    <main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+    <main class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row">
+        <div id="sidebarContainer" class="w-full shrink-0 md:w-64"></div>
+        <div class="min-w-0 flex-1 space-y-6">
         <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Navegación">
             <a href="Panel%20de%20control.html" class="hover:text-sky-700">Panel</a>
             <span aria-hidden="true">/</span>
@@ -39,7 +41,10 @@
                 <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Historial de simulaciones</h1>
                 <p class="mt-2 max-w-2xl text-sm text-slate-600">Cada fila corresponde a una medición registrada. Se muestran primero las ejecuciones más recientes.</p>
             </div>
-            <a href="simulacion.html" class="inline-flex items-center justify-center rounded-xl bg-sky-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800">Nueva simulación</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="reportes.html#anomalias" class="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-sm transition hover:bg-amber-100">Historial de anomalías</a>
+                <a href="simulacion.html" class="inline-flex items-center justify-center rounded-xl bg-sky-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800">Nueva simulación</a>
+            </div>
         </section>
 
         <section class="grid gap-4 sm:grid-cols-2">
@@ -75,7 +80,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1050px] text-left text-sm">
+                <table class="w-full min-w-262.5 text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                             <th scope="col" class="px-5 py-3">Fecha y hora</th>
@@ -102,7 +107,9 @@
                 </div>
             </div>
         </section>
+        </div>
     </main>
+    <script type="module" src="../JS/menuLateral.js?v=1.1"></script>
     <script type="module" src="../JS/historialSimulaciones.js"></script>
 </body>
 </html>

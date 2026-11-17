@@ -34,6 +34,7 @@ if (isset($conexion) && $conexion instanceof mysqli && !$conexion->connect_error
 }
 
 $_SESSION['historialSimulacionesDemo'] = [];
+unset($_SESSION['estadoDispositivosSimulacionDemo']);
 echo json_encode([
     'success' => true,
     'origen' => 'memoria',

@@ -6,7 +6,7 @@
     <meta name="description" content="Reportes de disponibilidad, latencia y consumo por sede y dispositivo.">
     <title>Centinel - Reportes</title>
     <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.5">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
     <header class="bg-slate-900 text-white shadow-lg">
@@ -14,7 +14,7 @@
             <a href="Panel%20de%20control.html" class="flex items-center gap-3">
                 <img src="../../public/favicon.svg" alt="" class="h-9 w-9">
                 <span class="text-xl font-bold tracking-wide">Centinel</span>
-                <span class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Gerencia</span>
+                <span id="badgeRol" class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Gerencia</span>
             </a>
             <div class="flex items-center gap-3">
                 <img id="headerAvatarImg" src="../assets/avatar_gerente.svg" alt="" class="h-9 w-9 rounded-full border border-slate-600">
@@ -24,7 +24,9 @@
         </div>
     </header>
 
-    <main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+    <main class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row">
+        <div id="sidebarContainer" class="w-full shrink-0 md:w-64"></div>
+        <div class="min-w-0 flex-1 space-y-6">
         <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Navegación">
             <a href="Panel%20de%20control.html" class="hover:text-sky-700">Panel</a>
             <span aria-hidden="true">/</span>
@@ -37,14 +39,20 @@
             <div>
                 <p class="text-sm font-bold uppercase tracking-widest text-sky-700">Centro de análisis</p>
                 <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Reportes de red</h1>
-                <p class="mt-2 max-w-2xl text-sm text-slate-600">Compara disponibilidad, latencia y consumo entre sedes o dispositivos a lo largo del tiempo.</p>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Compara las métricas de red y analiza la conectividad, latencia y ancho de banda de las simulaciones por periodo.</p>
             </div>
-            <button id="btnExportarPDF" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:opacity-60">
+            <button id="btnExportarPDF" type="button" hidden class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:opacity-60">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
                 Exportar dashboard a PDF
             </button>
         </section>
 
+        <div class="flex flex-wrap gap-2 border-b border-slate-200" role="tablist" aria-label="Secciones de reportes">
+            <button id="tabDashboard" type="button" role="tab" aria-controls="panelDashboard" aria-selected="true" data-report-tab="dashboard" class="rounded-t-lg border-b-2 border-sky-700 px-4 py-3 text-sm font-bold text-sky-800">Dashboard</button>
+            <button id="tabAnomalias" type="button" role="tab" aria-controls="panelAnomalias" aria-selected="false" data-report-tab="anomalias" class="rounded-t-lg border-b-2 border-transparent px-4 py-3 text-sm font-bold text-slate-500 hover:text-sky-700">Anomalías e historial</button>
+        </div>
+
+        <div id="panelDashboard" role="tabpanel" aria-labelledby="tabDashboard" class="space-y-6">
         <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="grid gap-4 lg:grid-cols-[1fr_1fr_2fr_auto] lg:items-end">
                 <label class="block text-sm font-semibold text-slate-700">
@@ -137,11 +145,176 @@
                 </div>
             </article>
             <p class="px-1 text-xs text-slate-500">Disponibilidad calculada como registros conectados / registros totales del periodo. El historial debe tener una frecuencia de muestreo consistente.</p>
+
+        <section id="dashboardAnalisis" class="space-y-6 border-t border-slate-200 pt-8">
+            <div>
+                <p class="text-sm font-bold uppercase tracking-widest text-sky-700">Historial de simulaciones</p>
+                <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">Análisis estocástico de simulaciones</h2>
+                <p class="mt-2 max-w-3xl text-sm text-slate-600">Explora la tendencia de conectividad, latencia y ancho de banda. Cada bloque resume varias mediciones; solo los huecos aislados se interpolan para orientar la lectura, no como valores medidos.</p>
+            </div>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 xl:items-end">
+                    <label class="text-sm font-semibold text-slate-700">Intervalo
+                        <select id="granularidadAnalisis" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="mes">Mes</option>
+                            <option value="semana">Semana</option>
+                            <option value="dia" selected>Día</option>
+                            <option value="hora">Hora</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Desde
+                        <input id="desdeAnalisis" type="date" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal">
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Hasta
+                        <input id="hastaAnalisis" type="date" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal">
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Sede
+                        <select id="sedeAnalisis" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="">Todas las sedes</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Dispositivo
+                        <select id="dispositivoAnalisis" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="">Todos los dispositivos</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                    <p id="mensajeAnalisis" role="status" aria-live="polite" class="text-sm text-slate-500">Selecciona los filtros y actualiza el análisis.</p>
+                    <button id="btnActualizarAnalisis" type="button" class="rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200">Actualizar análisis</button>
+                </div>
+            </section>
+
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-sm font-semibold text-slate-500">Mediciones</p>
+                    <p id="totalMedicionesAnalisis" class="mt-2 text-2xl font-bold text-slate-900">—</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-sm font-semibold text-slate-500">Conectividad observada</p>
+                    <p id="probabilidadAnalisis" class="mt-2 text-2xl font-bold text-emerald-700">—</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-sm font-semibold text-slate-500">Simulaciones automáticas</p>
+                    <p id="automaticasAnalisis" class="mt-2 text-2xl font-bold text-slate-900">—</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-sm font-semibold text-slate-500">Mediciones manuales</p>
+                    <p id="manualesAnalisis" class="mt-2 text-2xl font-bold text-slate-900">—</p>
+                </article>
+            </div>
+
+            <div class="grid gap-6 xl:grid-cols-2">
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h3 class="font-bold text-slate-900">Probabilidad empírica de conexión</h3>
+                    <p class="mt-1 text-xs text-slate-500">Registros conectados / mediciones del intervalo.</p>
+                    <div class="relative mt-4 h-72"><canvas id="graficoProbabilidadAnalisis" aria-label="Probabilidad de conexión por intervalo"></canvas></div>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h3 class="font-bold text-slate-900">Latencia</h3>
+                    <p class="mt-1 text-xs text-slate-500">Comportamiento de las mediciones de latencia por intervalo.</p>
+                    <div class="relative mt-4 h-72"><canvas id="graficoLatenciaAnalisis" aria-label="Gráfico del comportamiento de latencia por intervalo"></canvas></div>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+                    <h3 class="font-bold text-slate-900">Ancho de banda</h3>
+                    <p class="mt-1 text-xs text-slate-500">Comportamiento de las mediciones de ancho de banda por intervalo.</p>
+                    <div class="relative mt-4 h-72"><canvas id="graficoAnchoBandaAnalisis" aria-label="Gráfico del comportamiento de ancho de banda por intervalo"></canvas></div>
+                </article>
+            </div>
         </section>
+        </section>
+        </div>
+
+        <section id="panelAnomalias" role="tabpanel" aria-labelledby="tabAnomalias" class="hidden space-y-6">
+            <div>
+                <p class="text-sm font-bold uppercase tracking-widest text-amber-700">Seguimiento de incidentes</p>
+                <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">Reportes de anomalías</h2>
+                <p class="mt-2 max-w-3xl text-sm text-slate-600">Registra problemas de sedes o dispositivos, revisa su estado y consulta cada cambio con fecha, usuario y valores anteriores y nuevos.</p>
+            </div>
+
+            <section id="formularioReporteContenedor" class="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 id="tituloFormularioReporte" class="font-bold text-slate-900">Crear reporte de anomalía</h3>
+                        <p class="mt-1 text-xs text-slate-500">La hora corresponde a la fecha local seleccionada.</p>
+                    </div>
+                    <button id="btnCancelarEdicionReporte" type="button" class="hidden rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar edición</button>
+                </div>
+                <form id="formReporteAnomalia" class="grid gap-4 md:grid-cols-2">
+                    <label class="text-sm font-semibold text-slate-700">Objetivo
+                        <select id="tipoObjetivoReporte" name="tipo_objetivo" required class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="sede">Sede</option>
+                            <option value="dispositivo">Dispositivo</option>
+                        </select>
+                    </label>
+                    <label id="campoSedeReporte" class="text-sm font-semibold text-slate-700">Sede
+                        <select id="idSedeReporte" name="id_sede" required class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"></select>
+                    </label>
+                    <label id="campoDispositivoReporte" class="hidden text-sm font-semibold text-slate-700">Dispositivo
+                        <select id="idDispositivoReporte" name="id_dispositivo" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal"></select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Tipo de error
+                        <select id="tipoErrorReporte" name="tipo_error" required class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="conectividad">Conectividad</option>
+                            <option value="latencia">Latencia</option>
+                            <option value="ancho_banda">Ancho de banda</option>
+                            <option value="hardware">Hardware</option>
+                            <option value="seguridad">Seguridad</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Fecha y hora del evento
+                        <input id="fechaEventoReporte" name="fecha_evento" type="datetime-local" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal">
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Prioridad
+                        <select id="prioridadReporte" name="prioridad" required class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="baja">Baja</option>
+                            <option value="media" selected>Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="critica">Crítica</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700">Estado
+                        <select id="estadoReporte" name="estado" required class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_revision">En revisión</option>
+                            <option value="resuelto">Resuelto</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700 md:col-span-2">Título
+                        <input id="tituloReporte" name="titulo" type="text" maxlength="180" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" placeholder="Resumen breve de la anomalía">
+                    </label>
+                    <label class="text-sm font-semibold text-slate-700 md:col-span-2">Detalles
+                        <textarea id="detallesReporte" name="detalles" rows="4" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal" placeholder="Describe qué ocurre, el impacto y cualquier dato útil para revisarlo."></textarea>
+                    </label>
+                    <div class="flex flex-wrap items-center gap-3 md:col-span-2">
+                        <button id="btnGuardarReporte" type="submit" class="rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Guardar reporte</button>
+                        <p id="mensajeAnomalias" role="status" aria-live="polite" class="text-sm text-slate-500">Cargando reportes...</p>
+                    </div>
+                </form>
+            </section>
+
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900">Incidentes registrados</h3>
+                        <p class="mt-1 text-xs text-slate-500">El historial de cada reporte incluye su creación y todas las modificaciones posteriores.</p>
+                    </div>
+                    <button id="btnActualizarAnomalias" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Actualizar lista</button>
+                </div>
+                <div id="listaReportesAnomalia" class="divide-y divide-slate-100">
+                    <p class="px-5 py-10 text-center text-sm text-slate-500">Cargando reportes...</p>
+                </div>
+            </section>
+        </section>
+        </div>
     </main>
 
+    <script type="module" src="../JS/menuLateral.js?v=1.2"></script>
     <script src="../../public/vendor/chart.umd.js"></script>
     <script src="../../public/vendor/jspdf.umd.min.js"></script>
-    <script type="module" src="../JS/reportes.js"></script>
+    <script type="module" src="../JS/reportes.js?v=1.9"></script>
+    <script type="module" src="../JS/reportesAnomalias.js"></script>
 </body>
 </html>

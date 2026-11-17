@@ -23,9 +23,7 @@ centinel/
 │   ├── assets/                 # Recursos multimedia, íconos y avatares
 │   │   ├── avatar_gerente.svg  # Avatar vectorial corporativo para rol Gerente
 │   │   ├── avatar_tecnico.svg  # Avatar vectorial de soporte para rol Técnico
-│   │   ├── hero.png            # Imagen ilustrativa
-│   │   ├── javascript.svg      # Ícono oficial de JavaScript
-│   │   ├── security.svg         # Ícono SVG de seguridad y soporte
+│   │   ├── security.svg        # Ícono SVG de seguridad y soporte
 │   │   └── vite.svg            # Logo de la plataforma
 │   │
 │   ├── BD/                     # Capa de datos y conexión a Base de Datos
@@ -43,8 +41,11 @@ centinel/
 │   ├── JS/                     # Scripts cliente en JavaScript
 │   │   ├── main.js             # Punto de entrada modular del frontend
 │   │   ├── panelControl.js     # Lógica dinámica del panel de control, avatar y sesión
-│   │   ├── simulacion.js       # Configuración manual/automática y envío de simulaciones
-│   │   ├── reportes.js         # Gráficos, comparación mensual y exportación PDF
+│   │   ├── menuLateral.js      # Menú lateral compartido en las vistas del sistema
+│   │   ├── simulacion.js       # Simulación estocástica basada en estadísticas históricas
+│   │   ├── reportes.js         # Dashboards de reportes y análisis de simulaciones
+│   │   ├── reportesAnomalias.js # Alta, edición, revisión e historial de anomalías
+│   │   ├── soporte.js          # Interacción con el formulario de soporte
 │   │   ├── historialSimulaciones.js # Tabla paginada del historial de mediciones
 │   │   └── validarFormulario.js# Intercepción y envío asíncrono (Fetch API) de credenciales
 │   │
@@ -54,17 +55,23 @@ centinel/
 │   │   ├── obtenerDispositivos.php # API para consultar inventario de red, métricas y sedes
 │   │   ├── obtenerSimulacion.php   # Última medición por dispositivo (monitoreo técnico)
 │   │   ├── obtenerHistorialSimulaciones.php # Historial paginado de todas las mediciones
+│   │   ├── obtenerEstadisticasSimulacion.php # Estadísticas históricas para el modo automático
 │   │   ├── guardarSimulacion.php   # Guarda una tanda de mediciones en una transacción
 │   │   ├── obtenerReportes.php     # Reportes mensuales protegidos para Gerente
+│   │   ├── obtenerReportesAnomalia.php # Reportes de anomalías y auditoría
+│   │   ├── obtenerAnalisisSimulacion.php # Agregados temporales del historial
+│   │   ├── guardarReporteAnomalia.php  # Alta/edición gerencial y revisión técnica
 │   │   └── obtenerSesion.php   # Endpoint para validar autenticación y datos de usuario activo
 │   │
 │   └── Vistas/                 # Vistas y paneles de control
 │       ├── Panel de control.html # Vista unificada que se adapta según el rol conectado
 │       ├── simulacion.html       # Tabla de simulación para Gerente y Técnico
 │       ├── historial-simulaciones.html # Historial completo paginado
-│       └── reportes.html         # Dashboard gráfico exclusivo para Gerente
+│       ├── reportes.html         # Dashboard gerencial y pestaña técnica de anomalías
+│       └── soporte.html          # Formulario de soporte y preguntas frecuentes
 │
 ├── centinel.sql                # Script de inicialización y estructura de la BD
+├── migracion_reportes_anomalia.sql # Migración para bases Centinel existentes
 ├── index.html                  # Vista inicial y formulario de autenticación (Login)
 ├── package.json                # Configuración de dependencias y scripts de pnpm
 ├── pnpm-lock.yaml              # Bloqueo de versiones de dependencias de pnpm
@@ -80,11 +87,16 @@ centinel/
 | Ruta / Archivo | Tipo | Descripción |
 | :--- | :--- | :--- |
 | `index.html` | Vista (HTML5) | Interfaz inicial con formulario para inicio de sesión. |
-| `src/Vistas/Panel de control.html` | Vista (HTML5) | Panel de control unificado. Incluye menú lateral fijo (*Monitoreo por sede: Miranda, Aragua, Táchira*) y espacio central que adapta avatar, badge y saludo según el rol. |
+| `src/Vistas/Panel de control.html` | Vista (HTML5) | Panel de control unificado con monitoreo por sede y contenido adaptado al rol. El menú lateral compartido se carga en las vistas del sistema. |
 | `src/CSS/output.css` | Hoja de estilos | Estilos compilados y optimizados mediante Tailwind CSS v4. |
 | `src/JS/main.js` | Script cliente | Punto de entrada modular que orquesta los módulos JavaScript en el login. |
 | `src/JS/validarFormulario.js` | Script cliente | Captura el evento `submit`, valida credenciales, envía petición vía `Fetch API` a `login.php` y redirige al panel unificado guardando datos temporales en `sessionStorage`. |
 | `src/JS/panelControl.js` | Script cliente | Consulta `obtenerSesion.php`, verifica permisos, asigna el avatar correspondiente (`avatar_gerente.svg` o `avatar_tecnico.svg`), actualiza el badge/saludo y gestiona el cierre de sesión con `logout.php`. |
+| `src/JS/menuLateral.js` | Script cliente | Renderiza la navegación lateral común, las sedes disponibles y las secciones permitidas para el rol autenticado. |
+| `src/JS/simulacion.js` | Script cliente | Presenta los valores simulados y sus estadísticas históricas; guarda tandas individuales o múltiples. |
+| `src/JS/reportes.js` | Script cliente | Gestiona el dashboard gerencial, el análisis estocástico y la navegación de reportes por rol. |
+| `src/JS/reportesAnomalias.js` | Script cliente | Permite crear y editar reportes como Gerente y consultar/actualizar su revisión como Técnico. |
+| `src/JS/soporte.js` | Script cliente | Valida el formulario de soporte y prepara el mensaje de contacto. |
 
 ### 2. Procesamiento Backend y API (PHP)
 | Ruta / Archivo | Método / Uso | Responsabilidad |
@@ -95,6 +107,11 @@ centinel/
 | `src/PHP/logout.php` | `POST` (JSON) | Destruye completamente la sesión del servidor y cookies asociadas de forma segura. |
 | `src/BD/DBConn.php` | Inclusión PHP | Conexión a la base de datos MariaDB (`centinel`) centralizada con `mysqli`. |
 | `src/BD/obtenerDatos.php` | `GET` (JSON) | Endpoint que extrae y entrega en JSON el listado de usuarios registrados. |
+| `src/PHP/obtenerEstadisticasSimulacion.php` | `GET` (JSON) | Calcula probabilidad de conectividad, media, desviación y tamaño muestral con historial del dispositivo, su sede o el conjunto global. |
+| `src/PHP/guardarSimulacion.php` | `POST` (JSON) | Registra un lote de mediciones simuladas. |
+| `src/PHP/obtenerAnalisisSimulacion.php` | `GET` (JSON) | Entrega al Gerente agregados cronológicos para el análisis estocástico. |
+| `src/PHP/obtenerReportesAnomalia.php` | `GET` (JSON) | Consulta reportes de anomalías y su historial según el rol y permisos del usuario. |
+| `src/PHP/guardarReporteAnomalia.php` | `POST` (JSON) | Crea/edita reportes para Gerencia y registra la revisión técnica con auditoría. |
 
 ### 3. Base de Datos (`centinel.sql`)
 Estructura relacional diseñada para soportar:
@@ -104,13 +121,17 @@ Estructura relacional diseñada para soportar:
 - `sede_dispositivo`: Tabla intermedia que asocia dispositivos a sus respectivas sedes.
 - `simulacion`: Historial append-only de cada medición (`id_simulacion`, `id_dispositivo`, `conectividad`, `latencia`, `ancho_banda`, `modo`, `fecha_registro`). Se crea junto con el resto del esquema en `centinel.sql`; tiene clave foránea al dispositivo e índices por dispositivo/fecha y fecha. `conectividad` usa `TINYINT(1)` (equivalente práctico a `BOOLEAN`), las métricas son `FLOAT` y `fecha_registro` es `TIMESTAMP`.
 
-Selecciona o crea la base `centinel` en MariaDB e importa únicamente `centinel.sql` para cargar todo el esquema y los datos de demostración, incluido el historial de simulaciones de octubre de 2026. El modo de demostración en memoria continúa disponible si no se puede conectar a la base de datos.
+Selecciona o crea la base `centinel` en MariaDB e importa `centinel.sql` para crear el esquema y cargar los datos de demostración, incluido el historial de simulaciones de octubre de 2026. El script de inicialización contiene también las tablas de reportes de anomalías y su historial. Para una base Centinel ya existente, importa `migracion_reportes_anomalia.sql` una sola vez. Las funciones de persistencia que ofrecen modo de demostración conservan esos datos solo en la sesión actual cuando no se puede conectar a MariaDB; la simulación múltiple requiere la conexión a la base de datos porque vuelve a consultar estadísticas históricas entre tandas.
 
 ### Módulos de simulación y reportes
-- La simulación presenta el inventario de todas las sedes, permite mezclar modos automáticos y manuales por dispositivo y envía el lote JSON a `guardarSimulacion.php`. Sin conexión a MariaDB, las respuestas se identifican explícitamente como `origen: "memoria"` y no prometen persistencia.
-- El módulo `historial-simulaciones.html` lista las mediciones registradas en orden cronológico inverso, permite filtrar por sede y pagina todo el historial; en modo memoria, las simulaciones de demostración se conservan en la sesión actual.
-- El monitoreo por sede consulta `obtenerSimulacion.php`, que obtiene la medición más reciente por `fecha_registro` (y usa el id como desempate).
-- El dashboard de reportes ofrece comparación mensual, gráficos Chart.js y exportación PDF mediante jsPDF, que incluye los canvas renderizados para conservar los gráficos. Las distribuciones se sirven localmente desde `public/vendor/`, por lo que la vista no depende de CDN ni de conexión a internet. El endpoint de reportes y su vista requieren sesión de Gerente.
+- El panel principal muestra el inventario y monitoreo por sede. El menú lateral reutilizable aparece en las vistas del sistema y adapta la navegación y el alcance de sedes al rol.
+- La vista de simulación permite usar modo automático o manual por dispositivo y guardar un lote en el historial. En modo automático, `obtenerEstadisticasSimulacion.php` usa las mediciones históricas manuales y automáticas, priorizando estadísticas del dispositivo y recurriendo a su sede y luego al conjunto global. Se requieren al menos cinco mediciones y dos muestras válidas por métrica. La conectividad usa una estimación Beta(1,1) suavizada; la latencia se genera con una lognormal ajustada a la media y desviación observadas, y el ancho de banda con una Gamma ajustada por momentos. La tabla muestra probabilidad, media, desviación, tamaño y origen de las estadísticas.
+- El botón de simulación múltiple permite ejecutar de 1 a 100 tandas aleatorias para los dispositivos visibles, que deben estar todos en modo automático y contar con MariaDB. Antes de cada tanda vuelve a consultar las estadísticas, actualiza sus indicadores en pantalla, genera muestras nuevas y guarda el lote. Al terminar consulta una vez más para mostrar las estadísticas posteriores a la última tanda. Si hay un error, se detiene y muestra cuántas tandas quedaron guardadas; si completa todo, vuelve al panel de “Todas las sedes”. Después de reiniciar el historial, se pueden guardar mediciones manuales para volver a habilitar el modo automático.
+- El módulo `historial-simulaciones.html` lista las mediciones en orden cronológico inverso, permite filtrar por sede y pagina el historial. El monitoreo por sede consulta `obtenerSimulacion.php` para obtener la medición más reciente por fecha (y usa el id como desempate).
+- El Dashboard de Reportes es exclusivo del Gerente y compara resultados mensuales, por sede o dispositivo, con gráficas Chart.js. Permite agregar meses a la comparación y exportar el dashboard a PDF mediante jsPDF; la exportación no aparece en la vista del Técnico.
+- El Gerente también tiene un análisis estocástico del historial por mes, semana, día u hora, con filtros de fechas, sede y dispositivo. Para un único intervalo, agrupa los datos cronológicos en hasta doce bloques; grafica conectividad como proporción observada y latencia/ancho de banda como líneas continuas con una mediana móvil robusta. Los huecos aislados se interpolan solo en la tendencia y se identifican como estimaciones; el ancho de banda usa escala logarítmica cuando los valores extremos comprimen el rango. El análisis no inventa ni agrega mediciones.
+- La pestaña “Anomalías e historial” está disponible para Gerente y Técnico. Gerencia puede crear y editar reportes asociados a una sede o dispositivo, con fecha/hora, tipo de error, detalles, prioridad y estado; cada edición se registra en el historial con fecha, usuario y cambios. El Técnico consulta los reportes y actualiza su estado de revisión. Los datos se guardan en `reporte_anomalia` e `historial_reporte_anomalia`, incluidas en `centinel.sql`; la migración para bases ya creadas es `migracion_reportes_anomalia.sql`.
+- La página de soporte contiene formulario de contacto y preguntas frecuentes. Las distribuciones de Chart.js y jsPDF se sirven localmente desde `public/vendor/`, sin depender de CDN.
 - Las consultas de inventario, historial y métricas convierten las filas de MariaDB en instancias de los modelos PHP en `src/Modelos/`.
 
 ---

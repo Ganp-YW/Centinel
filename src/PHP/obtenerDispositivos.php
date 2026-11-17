@@ -1,6 +1,10 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Datos base por defecto para garantizar funcionamiento inmediato
 $dispositivosPorDefecto = [
     [
@@ -121,6 +125,14 @@ if (!empty($sedeFiltro) && strtolower($sedeFiltro) !== 'todas') {
         return strcasecmp($item['sede'], $sedeFiltro) === 0;
     }));
 }
+
+foreach ($resultado as &$dispositivo) {
+    $estadoDemo = $_SESSION['estadoDispositivosSimulacionDemo'][$dispositivo['id_dispositivo']] ?? null;
+    if ($estadoDemo !== null) {
+        $dispositivo = array_merge($dispositivo, $estadoDemo);
+    }
+}
+unset($dispositivo);
 
 echo json_encode([
     'success' => true,

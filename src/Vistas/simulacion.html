@@ -6,7 +6,7 @@
     <meta name="description" content="Configura y guarda simulaciones de conectividad para todos los dispositivos Centinel.">
     <title>Centinel - Simulación</title>
     <link rel="icon" type="image/svg+xml" href="../../public/favicon.svg">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.3">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.4">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
     <header class="bg-slate-900 text-white shadow-lg">
@@ -24,13 +24,14 @@
         </div>
     </header>
 
-    <main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+    <main class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row">
+        <div id="sidebarContainer" class="w-full shrink-0 md:w-64"></div>
+        <div class="min-w-0 flex-1 space-y-6">
         <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-500" aria-label="Navegación">
             <a href="Panel%20de%20control.html" class="hover:text-sky-700">Panel</a>
             <span aria-hidden="true">/</span>
             <span class="font-medium text-slate-800">Simulación</span>
             <a href="historial-simulaciones.html" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 shadow-sm hover:border-sky-300 hover:text-sky-700">Historial de simulaciones</a>
-            <a id="linkReportes" href="reportes.html" class="ml-auto hidden rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 shadow-sm hover:border-sky-300 hover:text-sky-700">Reportes gerenciales</a>
         </nav>
 
         <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -64,29 +65,37 @@
             <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900">Inventario de todas las sedes</h2>
-                    <p id="estadoCarga" class="mt-1 text-sm text-slate-500" role="status">Cargando dispositivos...</p>
+                    <p id="estadoCarga" class="mt-1 text-sm text-slate-500" role="status">Cargando dispositivos y estadísticas históricas...</p>
                 </div>
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <span>Filtrar sede</span>
-                    <select id="filtroSede" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
-                        <option value="todas">Todas las sedes</option>
-                        <option value="Miranda">Miranda</option>
-                        <option value="Aragua">Aragua</option>
-                        <option value="Táchira">Táchira</option>
-                    </select>
-                </label>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <label class="flex items-center gap-2 text-sm text-slate-600">
+                        <span>Filtrar sede</span>
+                        <select id="filtroSede" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                            <option value="todas">Todas las sedes</option>
+                            <option value="Miranda">Miranda</option>
+                            <option value="Aragua">Aragua</option>
+                            <option value="Táchira">Táchira</option>
+                        </select>
+                    </label>
+                    <button id="btnRegenerarValores" type="button" class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-100">
+                        Regenerar valores
+                    </button>
+                </div>
             </div>
 
             <form id="formSimulacion">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-245 text-left text-sm">
-                        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <div>
+                    <p class="border-b border-slate-100 px-5 py-3 text-xs text-slate-500">
+                        Se muestran los valores generados junto con la media (μ), desviación estándar (σ), tamaño de muestra (n) y origen de los datos. Se usan mediciones históricas manuales y automáticas del dispositivo; si son pocas, se amplía a su sede y luego al conjunto global. Después de reiniciar el historial, guarda mediciones manuales para volver a habilitar el modo automático.
+                    </p>
+                    <table class="w-full table-fixed text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-50 text-[0.6rem] uppercase tracking-wide text-slate-500 sm:text-xs">
                             <tr>
-                                <th scope="col" class="px-5 py-3">Dispositivo / sede</th>
-                                <th scope="col" class="px-4 py-3">Modo</th>
-                                <th scope="col" class="px-4 py-3">Conectividad</th>
-                                <th scope="col" class="px-4 py-3">Latencia (ms)</th>
-                                <th scope="col" class="px-4 py-3">Ancho de banda (Mbps)</th>
+                                <th scope="col" class="w-[22%] px-2 py-3 sm:px-3">Dispositivo / sede</th>
+                                <th scope="col" class="w-[16%] px-1 py-3 sm:px-2">Modo</th>
+                                <th scope="col" class="w-[22%] px-1 py-3 sm:px-2">Conectividad / P</th>
+                                <th scope="col" class="w-[18%] px-1 py-3 sm:px-2">Latencia (ms) · μ/σ</th>
+                                <th scope="col" class="w-[22%] px-1 py-3 sm:px-2">Ancho de banda (Mbps) · μ/σ</th>
                             </tr>
                         </thead>
                         <tbody id="tablaSimulacion" class="divide-y divide-slate-100">
@@ -94,23 +103,32 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
                     <div class="space-y-1">
                         <p id="mensajeSimulacion" class="text-sm text-slate-600" role="status" aria-live="polite">Los campos manuales se activan al elegir ese modo.</p>
+                        <p class="text-xs text-slate-500">Las repeticiones requieren MariaDB y modo automático. Las estadísticas y muestras se actualizan en cada tanda.</p>
                         <a id="linkHistorial" href="historial-simulaciones.html" class="hidden text-sm font-semibold text-sky-700 hover:text-sky-900">Ver historial de simulaciones</a>
                     </div>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                        <button id="btnReiniciarHistorial" type="button" class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
+                    <div class="flex flex-wrap items-end gap-2">
+                        <label class="text-xs font-semibold text-slate-600">Repeticiones
+                            <input id="cantidadSimulaciones" type="number" min="1" max="100" step="1" value="20" required aria-label="Cantidad de repeticiones, entre 1 y 100" class="mt-1 w-24 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-normal">
+                        </label>
+                        <button id="btnReiniciarHistorial" type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
                             Reiniciar historial
                         </button>
-                        <button id="btnGuardarSimulacion" type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-60">
-                            Confirmar y guardar simulación
+                        <button id="btnSimularVarias" type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800 transition hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-60">
+                            Simular varias veces
+                        </button>
+                        <button id="btnGuardarSimulacion" type="submit" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-sky-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-60">
+                            Guardar simulación
                         </button>
                     </div>
                 </div>
             </form>
         </section>
+        </div>
     </main>
-    <script type="module" src="../JS/simulacion.js"></script>
+    <script type="module" src="../JS/menuLateral.js?v=1.1"></script>
+    <script type="module" src="../JS/simulacion.js?v=1.1"></script>
 </body>
 </html>

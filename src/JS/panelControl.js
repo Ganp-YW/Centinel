@@ -117,11 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         usuario = data.usuario;
-        const vistaMonitoreo = document.querySelector('main[data-sede]');
-        if (vistaMonitoreo && !['Tecnico', 'Técnico'].includes(usuario.rol)) {
-            window.location.href = 'Panel%20de%20control.html';
-            return;
-        }
         sessionStorage.setItem('usuarioActivo', JSON.stringify(usuario));
         renderizarUsuario(usuario);
     } catch (err) {
@@ -135,16 +130,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Inicializar el panel de resumen y dispositivos
     inicializarEventos();
     await cargarDispositivos();
+    const sedeInicial = new URLSearchParams(window.location.search).get('sede');
+    if (['todas', 'Miranda', 'Aragua', 'Táchira'].includes(sedeInicial)) {
+        cambiarSede(sedeInicial);
+    }
 });
 
 // Función para actualizar los elementos según el rol y cuenta activa
 function renderizarUsuario(usuario) {
     if (!usuario) return;
 
-    const rolNormalizado = (usuario.rol === 'Tecnico' || usuario.rol === 'Técnico') ? 'Técnico' : usuario.rol;
-    const menuReportesItem = document.getElementById('menuReportesItem');
-    if (menuReportesItem && rolNormalizado === 'Gerente') {
-        menuReportesItem.classList.remove('hidden');
+    const rolUsuario = String(usuario.rol ?? '').trim();
+    const rolClave = rolUsuario.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+    const rolNormalizado = rolClave === 'tecnico'
+        ? 'Técnico'
+        : rolUsuario;
+    const menuHerramientas = document.getElementById('menuHerramientas');
+    if (menuHerramientas) {
+        menuHerramientas.classList.toggle('hidden', !['gerente', 'tecnico'].includes(rolClave));
+    }
+    const linkReportes = document.getElementById('linkReportes');
+    if (linkReportes) {
+        linkReportes.href = rolClave === 'tecnico' ? 'reportes.html#anomalias' : 'reportes.html';
+        linkReportes.textContent = rolClave === 'tecnico' ? 'Anomalías' : 'Reportes';
     }
     document.title = `Centinel - ${rolNormalizado} (${usuario.nombre})`;
 
@@ -195,24 +203,12 @@ function renderizarUsuario(usuario) {
 // Cargar dispositivos desde el backend o respaldo
 async function cargarDispositivos() {
     try {
-        const vistaSede = document.querySelector('main[data-sede]');
-        const url = vistaSede
-            ? `../PHP/obtenerSimulacion.php?sede=${encodeURIComponent(vistaSede.dataset.sede)}`
-            : '../PHP/obtenerDispositivos.php';
-        const res = await fetch(url);
+        const res = await fetch('../PHP/obtenerDispositivos.php', { cache: 'no-store' });
         if (!res.ok) throw new Error('Respuesta inválida del servidor');
         const data = await res.json();
 
         if (data.success && Array.isArray(data.dispositivos) && data.dispositivos.length > 0) {
-            todosLosDispositivos = vistaSede
-                ? data.dispositivos.map(dispositivo => ({
-                    ...dispositivo,
-                    status: Number(dispositivo.conectividad),
-                    BW_dispositivo: Number(dispositivo.ancho_banda),
-                    latencia_dispositivo: Number(dispositivo.latencia),
-                    fecha: dispositivo.fecha_registro
-                }))
-                : data.dispositivos;
+            todosLosDispositivos = data.dispositivos;
         } else {
             todosLosDispositivos = DISPOSITIVOS_POR_DEFECTO;
         }
@@ -236,13 +232,10 @@ function actualizarContadoresSidebar(lista) {
     const badgeMiranda = document.getElementById('badgeMiranda');
     const badgeAragua = document.getElementById('badgeAragua');
     const badgeTachira = document.getElementById('badgeTachira');
-    const badgeGestionTotal = document.getElementById('badgeGestionTotal');
-
     if (badgeTotalSedes) badgeTotalSedes.textContent = total;
     if (badgeMiranda) badgeMiranda.textContent = miranda;
     if (badgeAragua) badgeAragua.textContent = aragua;
     if (badgeTachira) badgeTachira.textContent = tachira;
-    if (badgeGestionTotal) badgeGestionTotal.textContent = total;
 }
 
 // Filtrar según la sede activa y el buscador de texto
@@ -428,16 +421,7 @@ function inicializarEventos() {
         });
     });
 
-    // 3. Menú Gestión > Dispositivos
-    const menuGestionDispositivos = document.getElementById('menuGestionDispositivos');
-    if (menuGestionDispositivos) {
-        menuGestionDispositivos.addEventListener('click', (e) => {
-            e.preventDefault();
-            cambiarSede('todas');
-        });
-    }
-
-    // 4. Buscador de texto en vivo
+    // 3. Buscador de texto en vivo
     const buscador = document.getElementById('buscadorDispositivos');
     if (buscador) {
         buscador.addEventListener('input', (e) => {
