@@ -13,7 +13,7 @@ La estructura base del proyecto, su árbol de archivos y sus rutas iniciales fue
 ```text
 centinel/
 ├── public/                     # Recursos públicos y estáticos del navegador
-│   ├── favicon.svg             # Ícono principal de la aplicación
+│   ├── favicon.svg             # Ícono SVG auxiliar
 │   ├── icons.svg               # Colección de íconos vectoriales SVG
 │   └── vendor/                 # Librerías locales para usar el dashboard sin CDN
 │       ├── chart.umd.js        # Distribución local de Chart.js
@@ -21,10 +21,11 @@ centinel/
 │
 ├── src/                        # Código fuente de la aplicación
 │   ├── assets/                 # Recursos multimedia, íconos y avatares
+│   │   ├── Logo Centinel.png   # Logotipo usado en encabezados y favicon
+│   │   ├── Tipografia Centinel.png # Nombre visual de Centinel en encabezados
 │   │   ├── avatar_gerente.svg  # Avatar vectorial corporativo para rol Gerente
 │   │   ├── avatar_tecnico.svg  # Avatar vectorial de soporte para rol Técnico
 │   │   ├── security.svg        # Ícono SVG de seguridad y soporte
-│   │   └── vite.svg            # Logo de la plataforma
 │   │
 │   ├── BD/                     # Capa de datos y conexión a Base de Datos
 │   │   ├── DBConn.php          # Script de conexión MySQLi a MariaDB/MySQL
@@ -97,6 +98,9 @@ centinel/
 | `src/JS/reportes.js` | Script cliente | Gestiona el dashboard gerencial, el análisis estocástico y la navegación de reportes por rol. |
 | `src/JS/reportesAnomalias.js` | Script cliente | Permite crear y editar reportes como Gerente y consultar/actualizar su revisión como Técnico. |
 | `src/JS/soporte.js` | Script cliente | Valida el formulario de soporte y prepara el mensaje de contacto. |
+
+### Identidad visual y encabezados
+Todas las páginas HTML (`index.html` y las vistas de `src/Vistas/`) comparten el logotipo y la tipografía de Centinel, almacenados en `src/assets/Logo Centinel.png` y `src/assets/Tipografia Centinel.png`. El logotipo también se utiliza como favicon. Los encabezados mantienen el mismo fondo azul oscuro y permanecen fijados en la parte superior al desplazarse por la página.
 
 ### 2. Procesamiento Backend y API (PHP)
 | Ruta / Archivo | Método / Uso | Responsabilidad |
