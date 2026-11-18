@@ -29,9 +29,10 @@ $esGerente = $rol === 'Gerente';
 $accion = $datos['accion'] ?? '';
 $estados = ['pendiente', 'en_revision', 'resuelto'];
 if (!$esGerente) {
-    if ($accion !== 'estado' || !in_array($datos['estado'] ?? '', $estados, true)) {
+    $accionEstadoValida = $accion === 'estado' && in_array($datos['estado'] ?? '', $estados, true);
+    if (!$accionEstadoValida && $accion !== 'comentario') {
         http_response_code(403);
-        echo json_encode(['success' => false, 'mensaje' => 'El técnico solo puede actualizar el estado de revisión.']);
+        echo json_encode(['success' => false, 'mensaje' => 'El técnico solo puede actualizar el estado y agregar comentarios a las anomalías.']);
         exit;
     }
 } elseif (!in_array($accion, ['crear', 'editar'], true)) {
@@ -184,10 +185,53 @@ function guardarEventoReporte(
     $stmt->close();
 }
 
+function notificarPorRoles(
+    mysqli $conexion,
+    int $idReporte,
+    int $idEmisor,
+    string $rolUno,
+    string $rolDos,
+    string $tipo,
+    string $mensaje
+): void {
+    $stmtUsuarios = $conexion->prepare('SELECT id_usuario FROM usuario WHERE type IN (?, ?) AND id_usuario <> ?');
+    if (!$stmtUsuarios) {
+        throw new RuntimeException('No se pudo preparar la consulta de destinatarios de notificaciones.');
+    }
+    $stmtUsuarios->bind_param('ssi', $rolUno, $rolDos, $idEmisor);
+    if (!$stmtUsuarios->execute()) {
+        throw new RuntimeException('No se pudieron consultar los destinatarios de notificaciones.');
+    }
+    $resultadoUsuarios = $stmtUsuarios->get_result();
+    $destinatarios = [];
+    while ($usuario = $resultadoUsuarios->fetch_assoc()) {
+        $destinatarios[] = (int) $usuario['id_usuario'];
+    }
+    $stmtUsuarios->close();
+
+    if (!$destinatarios) {
+        return;
+    }
+    $stmtNotificacion = $conexion->prepare(
+        'INSERT INTO notificacion (id_usuario, id_reporte, tipo, mensaje) VALUES (?, ?, ?, ?)'
+    );
+    if (!$stmtNotificacion) {
+        throw new RuntimeException('No se pudo preparar el envío de notificaciones.');
+    }
+    foreach ($destinatarios as $idDestinatario) {
+        $stmtNotificacion->bind_param('iiss', $idDestinatario, $idReporte, $tipo, $mensaje);
+        if (!$stmtNotificacion->execute()) {
+            $stmtNotificacion->close();
+            throw new RuntimeException('No se pudo enviar una notificación.');
+        }
+    }
+    $stmtNotificacion->close();
+}
+
 try {
     $idReporte = null;
     $anteriores = null;
-    if ($accion === 'editar' || $accion === 'estado') {
+    if (in_array($accion, ['editar', 'estado', 'comentario'], true)) {
         $idReporte = filter_var($datos['id_reporte'] ?? null, FILTER_VALIDATE_INT);
         if ($idReporte === false || $idReporte < 1) {
             responderErrorReporte(422, 'Identificador de reporte inválido.');
@@ -308,7 +352,7 @@ try {
         $stmt->close();
         $nuevos = obtenerDatosReporte($conexion, $idReporte);
         $accionHistorial = 'editado';
-    } else {
+    } elseif ($accion === 'estado') {
         $anteriores = obtenerDatosReporte($conexion, $idReporte, true);
         $estado = $datos['estado'];
         $stmt = $conexion->prepare('UPDATE reporte_anomalia SET estado = ? WHERE id_reporte = ?');
@@ -322,6 +366,46 @@ try {
         $stmt->close();
         $nuevos = obtenerDatosReporte($conexion, $idReporte);
         $accionHistorial = 'cambio_estado';
+    } else {
+        if ($esGerente) {
+            responderErrorReporte(403, 'Solo el técnico puede agregar comentarios a las anomalías.');
+        }
+        $reporteComentario = obtenerDatosReporte($conexion, $idReporte, true);
+        $comentario = textoReporte($datos['comentario'] ?? null);
+        if ($comentario === '' || longitudTextoReporte($comentario) > 5000) {
+            responderErrorReporte(422, 'El comentario es obligatorio y no debe exceder los 5000 caracteres.');
+        }
+
+        $stmtComentarioAnterior = $conexion->prepare(
+            'SELECT comentario FROM comentario_reporte_anomalia WHERE id_reporte = ? AND id_usuario = ? FOR UPDATE'
+        );
+        if (!$stmtComentarioAnterior) {
+            throw new RuntimeException('No se pudo preparar la consulta del comentario anterior.');
+        }
+        $stmtComentarioAnterior->bind_param('ii', $idReporte, $idUsuario);
+        if (!$stmtComentarioAnterior->execute()) {
+            throw new RuntimeException('No se pudo consultar el comentario anterior.');
+        }
+        $comentarioAnterior = $stmtComentarioAnterior->get_result()->fetch_assoc();
+        $stmtComentarioAnterior->close();
+
+        $stmtComentario = $conexion->prepare(
+            'INSERT INTO comentario_reporte_anomalia (id_reporte, id_usuario, comentario)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE comentario = VALUES(comentario), fecha_actualizacion = CURRENT_TIMESTAMP'
+        );
+        if (!$stmtComentario) {
+            throw new RuntimeException('No se pudo preparar el guardado del comentario.');
+        }
+        $stmtComentario->bind_param('iis', $idReporte, $idUsuario, $comentario);
+        if (!$stmtComentario->execute()) {
+            throw new RuntimeException('No se pudo guardar el comentario.');
+        }
+        $stmtComentario->close();
+
+        $anteriores = ['comentario' => $comentarioAnterior['comentario'] ?? null];
+        $nuevos = ['comentario' => $comentario];
+        $accionHistorial = 'comentario';
     }
 
     $nombreUsuario = (string) ($_SESSION['name_usu'] ?? 'Usuario');
@@ -334,10 +418,40 @@ try {
         $anteriores,
         $nuevos
     );
+    if ($esGerente) {
+        $tipoNotificacion = $accion === 'crear' ? 'reporte_nuevo' : 'reporte_actualizado';
+        $mensajeNotificacion = $accion === 'crear'
+            ? "Gerencia creó el reporte de anomalía #{$idReporte}: {$nuevos['titulo']}"
+            : "Gerencia actualizó el reporte de anomalía #{$idReporte}: {$nuevos['titulo']}";
+        notificarPorRoles($conexion, $idReporte, $idUsuario, 'Tecnico', 'Técnico', $tipoNotificacion, $mensajeNotificacion);
+    } elseif ($accion === 'comentario') {
+        notificarPorRoles(
+            $conexion,
+            $idReporte,
+            $idUsuario,
+            'Gerente',
+            'Gerente',
+            'comentario_tecnico',
+            "El técnico {$nombreUsuario} comentó en la anomalía #{$idReporte}: {$reporteComentario['titulo']}"
+        );
+    } elseif (($anteriores['estado'] ?? null) !== ($nuevos['estado'] ?? null)) {
+        notificarPorRoles(
+            $conexion,
+            $idReporte,
+            $idUsuario,
+            'Gerente',
+            'Gerente',
+            'anomalia_revisada',
+            "El técnico {$nombreUsuario} actualizó el estado de la anomalía #{$idReporte} a {$nuevos['estado']}."
+        );
+    }
     if (!$conexion->commit()) {
         throw new RuntimeException('No se pudo confirmar la transacción del reporte.');
     }
-    echo json_encode(['success' => true, 'mensaje' => 'Reporte guardado y agregado al historial.', 'id_reporte' => $idReporte]);
+    $mensajeExito = $accion === 'comentario'
+        ? 'Comentario guardado y agregado al historial.'
+        : 'Reporte guardado y agregado al historial.';
+    echo json_encode(['success' => true, 'mensaje' => $mensajeExito, 'id_reporte' => $idReporte]);
 } catch (Throwable $error) {
     $conexion->rollback();
     error_log('Error al guardar reporte de anomalía: ' . $error->getMessage());

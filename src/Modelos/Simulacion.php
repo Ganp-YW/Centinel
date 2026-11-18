@@ -12,7 +12,11 @@ final class Simulacion
         public ?string $ip_dispositivo = null,
         public ?string $sede = null,
         public ?string $fecha_registro = null,
-        public ?int $id_simulacion = null
+        public ?int $id_simulacion = null,
+        public string $origen = 'simulado',
+        public ?int $indice_paso = null,
+        public ?string $nombre_escenario = null,
+        public ?string $escenario = null
     ) {
     }
 
@@ -20,7 +24,10 @@ final class Simulacion
     {
         $sql = "SELECT s.id_simulacion, s.id_dispositivo, d.name_dispositivo, d.ip_dispositivo,
                        COALESCE(se.name_sede, 'Sin Asignar') AS sede,
-                       s.conectividad, s.latencia, s.ancho_banda, s.modo, s.fecha_registro
+                       s.conectividad, s.latencia, s.ancho_banda, s.modo, s.fecha_registro,
+                       s.origen, s.indice_paso,
+                       CASE WHEN s.indice_paso IS NULL THEN NULL ELSE 'Escenario temporal' END AS nombre_escenario,
+                       CASE WHEN s.indice_paso IS NULL THEN NULL ELSE 'escenario' END AS escenario
                 FROM simulacion s
                 INNER JOIN dispositivo d ON s.id_dispositivo = d.id_dispositivo
                 LEFT JOIN sede_dispositivo sd ON d.id_dispositivo = sd.id_dispositivo
@@ -29,13 +36,7 @@ final class Simulacion
                     SELECT 1
                     FROM simulacion mas_reciente
                     WHERE mas_reciente.id_dispositivo = s.id_dispositivo
-                      AND (
-                          mas_reciente.fecha_registro > s.fecha_registro
-                          OR (
-                              mas_reciente.fecha_registro = s.fecha_registro
-                              AND mas_reciente.id_simulacion > s.id_simulacion
-                          )
-                      )
+                      AND mas_reciente.id_simulacion > s.id_simulacion
                 )";
         $filtrarSede = $sede !== null && $sede !== '' && strtolower($sede) !== 'todas';
         if ($filtrarSede) {
@@ -68,37 +69,42 @@ final class Simulacion
                 $fila['ip_dispositivo'],
                 $fila['sede'],
                 $fila['fecha_registro'],
-                (int) $fila['id_simulacion']
+                (int) $fila['id_simulacion'],
+                $fila['origen'],
+                $fila['indice_paso'] !== null ? (int) $fila['indice_paso'] : null,
+                $fila['nombre_escenario'],
+                $fila['escenario']
             );
         }
         $stmt->close();
         return $simulaciones;
     }
 
-    public static function listarHistorial(mysqli $conexion, int $limite, int $offset, ?string $sede = null): array
+    public static function listarHistorial(
+        mysqli $conexion,
+        int $limite,
+        int $offset,
+        ?string $sede = null
+    ): array
     {
         $sql = "SELECT s.id_simulacion, s.id_dispositivo, d.name_dispositivo, d.ip_dispositivo,
                        COALESCE(se.name_sede, 'Sin Asignar') AS sede,
-                       s.conectividad, s.latencia, s.ancho_banda, s.modo, s.fecha_registro
+                       s.conectividad, s.latencia, s.ancho_banda, s.modo, s.fecha_registro,
+                       s.origen, s.indice_paso,
+                       CASE WHEN s.indice_paso IS NULL THEN NULL ELSE 'Escenario temporal' END AS nombre_escenario,
+                       CASE WHEN s.indice_paso IS NULL THEN NULL ELSE 'escenario' END AS escenario
                 FROM simulacion s
                 INNER JOIN dispositivo d ON s.id_dispositivo = d.id_dispositivo
                 LEFT JOIN sede_dispositivo sd ON d.id_dispositivo = sd.id_dispositivo
-                LEFT JOIN sede se ON sd.id_sede = se.id_sede";
-        $filtrarSede = $sede !== null && $sede !== '' && strtolower($sede) !== 'todas';
-        if ($filtrarSede) {
-            $sql .= " WHERE LOWER(se.name_sede) = LOWER(?)";
-        }
-        $sql .= " ORDER BY s.fecha_registro DESC, s.id_simulacion DESC LIMIT ? OFFSET ?";
+                LEFT JOIN sede se ON sd.id_sede = se.id_sede
+                WHERE (? = 'todas' OR LOWER(se.name_sede) = LOWER(?))
+                ORDER BY s.fecha_registro DESC, s.id_simulacion DESC LIMIT ? OFFSET ?";
         $stmt = $conexion->prepare($sql);
         if (!$stmt) {
             throw new RuntimeException('No se pudo preparar la consulta del historial de simulaciones.');
         }
-        if ($filtrarSede) {
-            $sedeParametro = $sede;
-            $stmt->bind_param('sii', $sedeParametro, $limite, $offset);
-        } else {
-            $stmt->bind_param('ii', $limite, $offset);
-        }
+        $sedeParametro = $sede !== null && $sede !== '' ? $sede : 'todas';
+        $stmt->bind_param('ssii', $sedeParametro, $sedeParametro, $limite, $offset);
         if (!$stmt->execute()) {
             throw new RuntimeException('No se pudo consultar el historial de simulaciones.');
         }
@@ -116,33 +122,35 @@ final class Simulacion
                 $fila['ip_dispositivo'],
                 $fila['sede'],
                 $fila['fecha_registro'],
-                (int) $fila['id_simulacion']
+                (int) $fila['id_simulacion'],
+                $fila['origen'],
+                $fila['indice_paso'] !== null ? (int) $fila['indice_paso'] : null,
+                $fila['nombre_escenario'],
+                $fila['escenario']
             );
         }
         $stmt->close();
         return $simulaciones;
     }
 
-    public static function contarHistorial(mysqli $conexion, ?string $sede = null): int
+    public static function contarHistorial(
+        mysqli $conexion,
+        ?string $sede = null
+    ): int
     {
         $sql = "SELECT COUNT(*)
                 FROM simulacion s
                 INNER JOIN dispositivo d ON s.id_dispositivo = d.id_dispositivo
                 LEFT JOIN sede_dispositivo sd ON d.id_dispositivo = sd.id_dispositivo
-                LEFT JOIN sede se ON sd.id_sede = se.id_sede";
-        $filtrarSede = $sede !== null && $sede !== '' && strtolower($sede) !== 'todas';
-        if ($filtrarSede) {
-            $sql .= " WHERE LOWER(se.name_sede) = LOWER(?)";
-        }
+                LEFT JOIN sede se ON sd.id_sede = se.id_sede
+                WHERE (? = 'todas' OR LOWER(se.name_sede) = LOWER(?))";
 
         $stmt = $conexion->prepare($sql);
         if (!$stmt) {
             throw new RuntimeException('No se pudo preparar el conteo del historial de simulaciones.');
         }
-        if ($filtrarSede) {
-            $sedeParametro = $sede;
-            $stmt->bind_param('s', $sedeParametro);
-        }
+        $sedeParametro = $sede !== null && $sede !== '' ? $sede : 'todas';
+        $stmt->bind_param('ss', $sedeParametro, $sedeParametro);
         if (!$stmt->execute()) {
             throw new RuntimeException('No se pudo contar el historial de simulaciones.');
         }
@@ -152,12 +160,14 @@ final class Simulacion
         return (int) $total;
     }
 
-    public function guardar(mysqli $conexion): void
+    public function guardar(mysqli $conexion, ?mysqli_stmt $stmt = null): void
     {
+        $crearStmt = $stmt === null;
         $sql = "INSERT INTO simulacion
-                    (id_dispositivo, conectividad, latencia, ancho_banda, modo, fecha_registro)
-                VALUES (?, ?, ?, ?, ?, NOW())";
-        $stmt = $conexion->prepare($sql);
+                    (id_dispositivo, conectividad, latencia, ancho_banda, modo, fecha_registro,
+                     origen, indice_paso)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt ??= $conexion->prepare($sql);
         if (!$stmt) {
             throw new RuntimeException('No se pudo preparar el registro de la simulación.');
         }
@@ -166,12 +176,29 @@ final class Simulacion
         $latencia = $this->latencia;
         $anchoBanda = $this->ancho_banda;
         $modo = $this->modo;
-        $stmt->bind_param('iidds', $idDispositivo, $conectividad, $latencia, $anchoBanda, $modo);
+        $fechaRegistro = $this->fecha_registro ?? date('Y-m-d H:i:s');
+        $origen = $this->origen;
+        $indicePaso = $this->indice_paso;
+        $stmt->bind_param(
+            'iiddsssi',
+            $idDispositivo,
+            $conectividad,
+            $latencia,
+            $anchoBanda,
+            $modo,
+            $fechaRegistro,
+            $origen,
+            $indicePaso
+        );
         if (!$stmt->execute()) {
-            $stmt->close();
+            if ($crearStmt) {
+                $stmt->close();
+            }
             throw new RuntimeException('No se pudo guardar una medición de la simulación.');
         }
-        $stmt->close();
+        if ($crearStmt) {
+            $stmt->close();
+        }
     }
 
     public function toArray(): array
@@ -186,7 +213,11 @@ final class Simulacion
             'latencia' => $this->latencia,
             'ancho_banda' => $this->ancho_banda,
             'modo' => $this->modo,
-            'fecha_registro' => $this->fecha_registro
+            'fecha_registro' => $this->fecha_registro,
+            'origen' => $this->origen,
+            'indice_paso' => $this->indice_paso,
+            'nombre_escenario' => $this->nombre_escenario,
+            'escenario' => $this->escenario
         ];
     }
 }

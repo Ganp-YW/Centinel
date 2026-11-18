@@ -68,7 +68,13 @@ if ($sede !== '' && strtolower($sede) !== 'todas') {
         static fn(array $simulacion): bool => strcasecmp($simulacion['sede'] ?? '', $sede) === 0
     ));
 }
-usort($historial, static fn(array $a, array $b): int => strcmp($b['fecha_registro'], $a['fecha_registro']));
+usort(
+    $historial,
+    static fn(array $a, array $b): int => strcmp(
+        (string) ($b['fecha_registro'] ?? ''),
+        (string) ($a['fecha_registro'] ?? '')
+    )
+);
 $total = count($historial);
 $paginas = max(1, (int) ceil($total / $porPagina));
 if ($pagina > $paginas) {

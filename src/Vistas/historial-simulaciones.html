@@ -6,7 +6,7 @@
     <meta name="description" content="Consulta el historial completo de mediciones y simulaciones registradas.">
     <title>Centinel - Historial de simulaciones</title>
     <link rel="icon" type="image/png" href="../assets/Logo%20Centinel.png">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.4">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.5">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
     <header class="sticky top-0 z-50 bg-slate-900 text-white shadow-lg">
@@ -17,6 +17,7 @@
                 <span id="badgeRol" class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Cargando...</span>
             </a>
             <div class="flex items-center gap-3">
+                <div id="notificacionesRoot"></div>
                 <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="" class="h-9 w-9 rounded-full border border-slate-600">
                 <span id="headerUserName" class="hidden text-sm text-slate-200 sm:inline">Usuario</span>
                 <button id="btnCerrarSesion" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800">Salir</button>
@@ -39,7 +40,7 @@
             <div>
                 <p class="text-sm font-bold uppercase tracking-widest text-sky-700">Registro de actividad</p>
                 <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Historial de simulaciones</h1>
-                <p class="mt-2 max-w-2xl text-sm text-slate-600">Cada fila corresponde a una medición registrada. Se muestran primero las ejecuciones más recientes.</p>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Cada fila corresponde a una medición. Se muestran primero las simulaciones guardadas más recientemente; la fecha puede ser elegida o generada automáticamente.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="reportes.html#anomalias" class="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 shadow-sm transition hover:bg-amber-100">Historial de anomalías</a>
@@ -64,15 +65,17 @@
                     <h2 class="font-bold text-slate-900">Todas las simulaciones</h2>
                     <p id="estadoHistorial" class="mt-1 text-sm text-slate-500" role="status" aria-live="polite">Cargando historial...</p>
                 </div>
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <span>Filtrar por sede</span>
-                    <select id="filtroSedeHistorial" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
-                        <option value="todas">Todas las sedes</option>
-                        <option value="Miranda">Miranda</option>
-                        <option value="Aragua">Aragua</option>
-                        <option value="Táchira">Táchira</option>
-                    </select>
-                </label>
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="flex flex-col gap-1 text-sm text-slate-600">
+                        <span>Filtrar por sede</span>
+                        <select id="filtroSedeHistorial" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                            <option value="todas">Todas las sedes</option>
+                            <option value="Miranda">Miranda</option>
+                            <option value="Aragua">Aragua</option>
+                            <option value="Táchira">Táchira</option>
+                        </select>
+                    </label>
+                </div>
                 <div class="flex items-center gap-2">
                     <button id="btnActualizarHistorial" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Actualizar</button>
                     <button id="btnReiniciarHistorial" type="button" class="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">Reiniciar historial</button>
@@ -90,7 +93,7 @@
                             <th scope="col" class="px-4 py-3">Latencia</th>
                             <th scope="col" class="px-4 py-3">Ancho de banda</th>
                             <th scope="col" class="px-4 py-3">Modo</th>
-                            <th scope="col" class="px-4 py-3">Registro</th>
+                            <th scope="col" class="px-4 py-3">Escenario / registro</th>
                         </tr>
                     </thead>
                     <tbody id="tablaHistorial" class="divide-y divide-slate-100">
@@ -110,6 +113,7 @@
         </div>
     </main>
     <script type="module" src="../JS/menuLateral.js?v=1.1"></script>
-    <script type="module" src="../JS/historialSimulaciones.js"></script>
+    <script type="module" src="../JS/historialSimulaciones.js?v=1.2"></script>
+    <script type="module" src="../JS/notificaciones.js?v=1.0"></script>
 </body>
 </html>

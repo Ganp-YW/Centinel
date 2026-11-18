@@ -89,10 +89,13 @@ CREATE TABLE `simulacion` (
   `latencia` float NOT NULL DEFAULT 0 COMMENT 'Latencia en milisegundos',
   `ancho_banda` float NOT NULL DEFAULT 0 COMMENT 'Ancho de banda en Mbps',
   `modo` enum('automatico','manual') NOT NULL DEFAULT 'automatico',
+  `origen` enum('real','simulado') NOT NULL DEFAULT 'simulado',
+  `indice_paso` int(10) unsigned DEFAULT NULL,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_simulacion`),
   KEY `idx_dispositivo_fecha` (`id_dispositivo`,`fecha_registro`),
-  KEY `idx_fecha_registro` (`fecha_registro`)
+  KEY `idx_fecha_registro` (`fecha_registro`),
+  KEY `idx_simulacion_origen_fecha` (`origen`,`fecha_registro`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -131,7 +134,7 @@ CREATE TABLE `historial_reporte_anomalia` (
   `id_reporte` int(11) NOT NULL,
   `id_usuario` int(11) DEFAULT NULL,
   `nombre_usuario` varchar(255) NOT NULL,
-  `accion` enum('creado','editado','cambio_estado') NOT NULL,
+  `accion` enum('creado','editado','cambio_estado','comentario') NOT NULL,
   `datos_anteriores` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`datos_anteriores`)),
   `datos_nuevos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`datos_nuevos`)),
   `fecha_cambio` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -139,6 +142,33 @@ CREATE TABLE `historial_reporte_anomalia` (
   KEY `idx_historial_reporte_fecha` (`id_reporte`,`fecha_cambio`),
   CONSTRAINT `fk_historial_reporte_anomalia` FOREIGN KEY (`id_reporte`) REFERENCES `reporte_anomalia` (`id_reporte`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_historial_reporte_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `comentario_reporte_anomalia` (
+  `id_comentario` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_reporte` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `comentario` text NOT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_comentario`),
+  UNIQUE KEY `uq_comentario_reporte_usuario` (`id_reporte`,`id_usuario`),
+  CONSTRAINT `fk_comentario_reporte_anomalia` FOREIGN KEY (`id_reporte`) REFERENCES `reporte_anomalia` (`id_reporte`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_comentario_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `notificacion` (
+  `id_notificacion` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id_usuario` int(11) NOT NULL,
+  `id_reporte` int(11) DEFAULT NULL,
+  `tipo` enum('reporte_nuevo','reporte_actualizado','anomalia_revisada','comentario_tecnico') NOT NULL,
+  `mensaje` varchar(500) NOT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_leida` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id_notificacion`),
+  KEY `idx_notificacion_usuario_pendiente` (`id_usuario`,`fecha_leida`,`fecha_creacion`),
+  CONSTRAINT `fk_notificacion_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_notificacion_reporte` FOREIGN KEY (`id_reporte`) REFERENCES `reporte_anomalia` (`id_reporte`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

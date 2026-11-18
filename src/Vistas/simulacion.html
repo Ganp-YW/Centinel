@@ -6,7 +6,7 @@
     <meta name="description" content="Configura y guarda simulaciones de conectividad para todos los dispositivos Centinel.">
     <title>Centinel - Simulación</title>
     <link rel="icon" type="image/png" href="../assets/Logo%20Centinel.png">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.4">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.5">
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
     <header class="sticky top-0 z-50 bg-slate-900 text-white shadow-lg">
@@ -17,6 +17,7 @@
                 <span id="badgeRol" class="rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-200">Cargando...</span>
             </a>
             <div class="flex items-center gap-3">
+                <div id="notificacionesRoot"></div>
                 <img id="headerAvatarImg" src="../assets/avatar_tecnico.svg" alt="" class="h-9 w-9 rounded-full border border-slate-600">
                 <span id="headerUserName" class="hidden text-sm text-slate-200 sm:inline">Usuario</span>
                 <button id="btnCerrarSesion" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800">Salir</button>
@@ -85,8 +86,57 @@
 
             <form id="formSimulacion">
                 <div>
+                    <section class="grid gap-4 border-b border-slate-100 px-5 py-4 sm:grid-cols-2 sm:items-end">
+                        <label class="text-sm font-semibold text-slate-700 sm:col-span-2">Escenario de red
+                            <select id="escenarioSimulacion" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                                <option value="puntual" selected>Medición puntual</option>
+                                <option value="caida">Caída de conectividad y recuperación</option>
+                                <option value="latencia">Latencia elevada</option>
+                                <option value="congestion">Congestión de red</option>
+                                <option value="recuperacion">Recuperación gradual del servicio</option>
+                            </select>
+                        </label>
+                        <label id="campoDuracionEscenario" class="hidden text-sm font-semibold text-slate-700">Duración de la serie
+                            <select id="duracionEscenario" disabled class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                                <option value="30">30 minutos</option>
+                                <option value="60" selected>1 hora</option>
+                                <option value="360">6 horas</option>
+                                <option value="1440">24 horas</option>
+                            </select>
+                        </label>
+                        <label id="campoIntervaloEscenario" class="hidden text-sm font-semibold text-slate-700">Frecuencia de medición
+                            <select id="intervaloEscenario" disabled class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                                <option value="60">Cada minuto</option>
+                                <option value="300" selected>Cada 5 minutos</option>
+                                <option value="900">Cada 15 minutos</option>
+                                <option value="3600">Cada hora</option>
+                            </select>
+                        </label>
+                        <div id="controlesFechaSimulacion" class="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                            <label class="text-sm font-semibold text-slate-700">Fecha de las simulaciones
+                                <select id="modoFechaSimulacion" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                                    <option value="manual">Manual · fecha y hora elegidas</option>
+                                    <option value="automatico" selected>Automático · patrón histórico</option>
+                                    <option value="super_automatico">Por periodo · fecha y hora aleatorias</option>
+                                </select>
+                            </label>
+                            <label id="campoFechaManual" class="hidden text-sm font-semibold text-slate-700">Fecha y hora manual
+                                <input id="fechaSimulacionManual" type="datetime-local" disabled required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 font-normal">
+                            </label>
+                            <label id="campoRangoFecha" class="hidden text-sm font-semibold text-slate-700">Periodo de fechas aleatorias
+                                <select id="rangoFechaSimulacion" disabled class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal">
+                                    <option value="hora">Última hora</option>
+                                    <option value="dia">Últimas 24 horas</option>
+                                    <option value="semana">Última semana</option>
+                                    <option value="mes">Último mes</option>
+                                    <option value="anio" selected>Último año</option>
+                                </select>
+                            </label>
+                            <p id="ayudaFechaSimulacion" class="text-xs text-slate-500 sm:col-span-2">Conserva el día y la hora observados en el historial y sortea minutos/segundos distintos para cada dispositivo.</p>
+                        </div>
+                    </section>
                     <p class="border-b border-slate-100 px-5 py-3 text-xs text-slate-500">
-                        Se muestran los valores generados junto con la media (μ), desviación estándar (σ), tamaño de muestra (n) y origen de los datos. Se usan mediciones históricas manuales y automáticas del dispositivo; si son pocas, se amplía a su sede y luego al conjunto global. Después de reiniciar el historial, guarda mediciones manuales para volver a habilitar el modo automático.
+                        Se muestran los valores generados junto con la media (μ), desviación estándar (σ) y tamaño de muestra (n). Se usan mediciones previas del dispositivo y, si son pocas, de su sede y del conjunto global; las series de escenarios se excluyen.
                     </p>
                     <table class="w-full table-fixed text-left text-xs sm:text-sm">
                         <thead class="bg-slate-50 text-[0.6rem] uppercase tracking-wide text-slate-500 sm:text-xs">
@@ -106,11 +156,11 @@
                 <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
                     <div class="space-y-1">
                         <p id="mensajeSimulacion" class="text-sm text-slate-600" role="status" aria-live="polite">Los campos manuales se activan al elegir ese modo.</p>
-                        <p class="text-xs text-slate-500">Las repeticiones requieren MariaDB y modo automático. Las estadísticas y muestras se actualizan en cada tanda.</p>
+                        <p class="text-xs text-slate-500">Los escenarios generan una serie temporal y se guardan en MariaDB. Las mediciones quedan identificadas como simuladas.</p>
                         <a id="linkHistorial" href="historial-simulaciones.html" class="hidden text-sm font-semibold text-sky-700 hover:text-sky-900">Ver historial de simulaciones</a>
                     </div>
                     <div class="flex flex-wrap items-end gap-2">
-                        <label class="text-xs font-semibold text-slate-600">Repeticiones
+                        <label id="campoRepeticiones" class="text-xs font-semibold text-slate-600">Repeticiones
                             <input id="cantidadSimulaciones" type="number" min="1" max="100" step="1" value="20" required aria-label="Cantidad de repeticiones, entre 1 y 100" class="mt-1 w-24 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm font-normal">
                         </label>
                         <button id="btnReiniciarHistorial" type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60">
@@ -129,6 +179,7 @@
         </div>
     </main>
     <script type="module" src="../JS/menuLateral.js?v=1.1"></script>
-    <script type="module" src="../JS/simulacion.js?v=1.1"></script>
+    <script type="module" src="../JS/simulacion.js?v=2.0"></script>
+    <script type="module" src="../JS/notificaciones.js?v=1.0"></script>
 </body>
 </html>

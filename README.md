@@ -46,6 +46,7 @@ centinel/
 │   │   ├── simulacion.js       # Simulación estocástica basada en estadísticas históricas
 │   │   ├── reportes.js         # Dashboards de reportes y análisis de simulaciones
 │   │   ├── reportesAnomalias.js # Alta, edición, revisión e historial de anomalías
+│   │   ├── notificaciones.js   # Bandeja desplegable y contador de pendientes del usuario
 │   │   ├── soporte.js          # Interacción con el formulario de soporte
 │   │   ├── historialSimulaciones.js # Tabla paginada del historial de mediciones
 │   │   └── validarFormulario.js# Intercepción y envío asíncrono (Fetch API) de credenciales
@@ -62,6 +63,7 @@ centinel/
 │   │   ├── obtenerReportesAnomalia.php # Reportes de anomalías y auditoría
 │   │   ├── obtenerAnalisisSimulacion.php # Agregados temporales del historial
 │   │   ├── guardarReporteAnomalia.php  # Alta/edición gerencial y revisión técnica
+│   │   ├── notificaciones.php # Consulta y marcado de notificaciones por usuario
 │   │   └── obtenerSesion.php   # Endpoint para validar autenticación y datos de usuario activo
 │   │
 │   └── Vistas/                 # Vistas y paneles de control
@@ -73,6 +75,7 @@ centinel/
 │
 ├── centinel.sql                # Script de inicialización y estructura de la BD
 ├── migracion_reportes_anomalia.sql # Migración para bases Centinel existentes
+├── migracion_notificaciones_anomalias.sql # Migración de comentarios y notificaciones
 ├── index.html                  # Vista inicial y formulario de autenticación (Login)
 ├── package.json                # Configuración de dependencias y scripts de pnpm
 ├── pnpm-lock.yaml              # Bloqueo de versiones de dependencias de pnpm
@@ -97,6 +100,7 @@ centinel/
 | `src/JS/simulacion.js` | Script cliente | Presenta los valores simulados y sus estadísticas históricas; guarda tandas individuales o múltiples. |
 | `src/JS/reportes.js` | Script cliente | Gestiona el dashboard gerencial, el análisis estocástico y la navegación de reportes por rol. |
 | `src/JS/reportesAnomalias.js` | Script cliente | Permite crear y editar reportes como Gerente y consultar/actualizar su revisión como Técnico. |
+| `src/JS/notificaciones.js` | Script cliente | Presenta las notificaciones pendientes en el encabezado y permite marcarlas como leídas. |
 | `src/JS/soporte.js` | Script cliente | Valida el formulario de soporte y prepara el mensaje de contacto. |
 
 ### Identidad visual y encabezados
@@ -116,6 +120,7 @@ Todas las páginas HTML (`index.html` y las vistas de `src/Vistas/`) comparten e
 | `src/PHP/obtenerAnalisisSimulacion.php` | `GET` (JSON) | Entrega al Gerente agregados cronológicos para el análisis estocástico. |
 | `src/PHP/obtenerReportesAnomalia.php` | `GET` (JSON) | Consulta reportes de anomalías y su historial según el rol y permisos del usuario. |
 | `src/PHP/guardarReporteAnomalia.php` | `POST` (JSON) | Crea/edita reportes para Gerencia y registra la revisión técnica con auditoría. |
+| `src/PHP/notificaciones.php` | `GET` / `POST` (JSON) | Consulta las notificaciones del usuario autenticado y marca una o todas como leídas. |
 
 ### 3. Base de Datos (`centinel.sql`)
 Estructura relacional diseñada para soportar:
@@ -123,18 +128,20 @@ Estructura relacional diseñada para soportar:
 - `sede`: Ubicaciones físicas o sucursales de la organización (Miranda, Aragua, Táchira, etc.).
 - `dispositivo`: Equipos de red con métricas de ancho de banda (`BW_dispositivo`), latencia y estado.
 - `sede_dispositivo`: Tabla intermedia que asocia dispositivos a sus respectivas sedes.
-- `simulacion`: Historial append-only de cada medición (`id_simulacion`, `id_dispositivo`, `conectividad`, `latencia`, `ancho_banda`, `modo`, `fecha_registro`). Se crea junto con el resto del esquema en `centinel.sql`; tiene clave foránea al dispositivo e índices por dispositivo/fecha y fecha. `conectividad` usa `TINYINT(1)` (equivalente práctico a `BOOLEAN`), las métricas son `FLOAT` y `fecha_registro` es `TIMESTAMP`.
+- `simulacion`: Historial append-only de mediciones simuladas con conectividad, latencia, ancho de banda, modo, fecha y metadatos de escenario.
+- `simulacion.indice_paso`: identifica las mediciones de las series de escenarios; las mediciones puntuales dejan este campo vacío.
 
-Selecciona o crea la base `centinel` en MariaDB e importa `centinel.sql` para crear el esquema y cargar los datos de demostración, incluido el historial de simulaciones de octubre de 2026. El script de inicialización contiene también las tablas de reportes de anomalías y su historial. Para una base Centinel ya existente, importa `migracion_reportes_anomalia.sql` una sola vez. Las funciones de persistencia que ofrecen modo de demostración conservan esos datos solo en la sesión actual cuando no se puede conectar a MariaDB; la simulación múltiple requiere la conexión a la base de datos porque vuelve a consultar estadísticas históricas entre tandas.
+Selecciona o crea la base `centinel` en MariaDB e importa `centinel.sql` para crear el esquema y cargar los datos de demostración, incluido el historial de simulaciones de octubre de 2026. El script de inicialización contiene también las tablas de anomalías, comentarios, notificaciones y auditoría. Las simulaciones y escenarios requieren MariaDB para persistirse; cuando la base no está disponible, algunas vistas usan datos de demostración de la sesión.
 
 ### Módulos de simulación y reportes
 - El panel principal muestra el inventario y monitoreo por sede. El menú lateral reutilizable aparece en las vistas del sistema y adapta la navegación y el alcance de sedes al rol.
-- La vista de simulación permite usar modo automático o manual por dispositivo y guardar un lote en el historial. En modo automático, `obtenerEstadisticasSimulacion.php` usa las mediciones históricas manuales y automáticas, priorizando estadísticas del dispositivo y recurriendo a su sede y luego al conjunto global. Se requieren al menos cinco mediciones y dos muestras válidas por métrica. La conectividad usa una estimación Beta(1,1) suavizada; la latencia se genera con una lognormal ajustada a la media y desviación observadas, y el ancho de banda con una Gamma ajustada por momentos. La tabla muestra probabilidad, media, desviación, tamaño y origen de las estadísticas.
-- El botón de simulación múltiple permite ejecutar de 1 a 100 tandas aleatorias para los dispositivos visibles, que deben estar todos en modo automático y contar con MariaDB. Antes de cada tanda vuelve a consultar las estadísticas, actualiza sus indicadores en pantalla, genera muestras nuevas y guarda el lote. Al terminar consulta una vez más para mostrar las estadísticas posteriores a la última tanda. Si hay un error, se detiene y muestra cuántas tandas quedaron guardadas; si completa todo, vuelve al panel de “Todas las sedes”. Después de reiniciar el historial, se pueden guardar mediciones manuales para volver a habilitar el modo automático.
-- El módulo `historial-simulaciones.html` lista las mediciones en orden cronológico inverso, permite filtrar por sede y pagina el historial. El monitoreo por sede consulta `obtenerSimulacion.php` para obtener la medición más reciente por fecha (y usa el id como desempate).
-- El Dashboard de Reportes es exclusivo del Gerente y compara resultados mensuales, por sede o dispositivo, con gráficas Chart.js. Permite agregar meses a la comparación y exportar el dashboard a PDF mediante jsPDF; la exportación no aparece en la vista del Técnico.
-- El Gerente también tiene un análisis estocástico del historial por mes, semana, día u hora, con filtros de fechas, sede y dispositivo. Para un único intervalo, agrupa los datos cronológicos en hasta doce bloques; grafica conectividad como proporción observada y latencia/ancho de banda como líneas continuas con una mediana móvil robusta. Los huecos aislados se interpolan solo en la tendencia y se identifican como estimaciones; el ancho de banda usa escala logarítmica cuando los valores extremos comprimen el rango. El análisis no inventa ni agrega mediciones.
-- La pestaña “Anomalías e historial” está disponible para Gerente y Técnico. Gerencia puede crear y editar reportes asociados a una sede o dispositivo, con fecha/hora, tipo de error, detalles, prioridad y estado; cada edición se registra en el historial con fecha, usuario y cambios. El Técnico consulta los reportes y actualiza su estado de revisión. Los datos se guardan en `reporte_anomalia` e `historial_reporte_anomalia`, incluidas en `centinel.sql`; la migración para bases ya creadas es `migracion_reportes_anomalia.sql`.
+- La vista de simulación mantiene los modos de fecha para mediciones puntuales y permite generar escenarios temporales de caída, latencia elevada, congestión y recuperación. Cada escenario genera y guarda una serie con duración y frecuencia seleccionables; queda asociada al escenario en el historial, sin guardar una configuración para repetirla.
+- En modo automático puntual, `obtenerEstadisticasSimulacion.php` usa el historial de mediciones puntuales del dispositivo y recurre a su sede y luego al conjunto global. Se requieren al menos cinco mediciones y dos muestras válidas por métrica. La conectividad usa una estimación Beta(1,1) suavizada; la latencia se genera con una lognormal ajustada a la media y desviación observadas, y el ancho de banda con una Gamma ajustada por momentos. Las series de escenarios se excluyen de este patrón.
+- El botón de simulación múltiple permite ejecutar de 1 a 100 tandas aleatorias para los dispositivos visibles, que deben estar todos en modo automático y contar con MariaDB. Antes de cada tanda vuelve a consultar el historial de mediciones puntuales y genera muestras nuevas. Las series de escenarios no alimentan las distribuciones automáticas. Si hay un error, se detiene y muestra cuántas tandas quedaron guardadas; si completa todo, vuelve al panel de “Todas las sedes”.
+- El módulo `historial-simulaciones.html` ordena las mediciones por fecha de simulación descendente (desempata por id), permite filtrar por sede y pagina el historial; los escenarios muestran su nombre asociado. El monitoreo por sede consulta `obtenerSimulacion.php` para obtener la última medición guardada de cada dispositivo.
+- El Dashboard de Reportes es exclusivo del Gerente y compara todas las simulaciones mensuales, por sede o dispositivo, con gráficas Chart.js. Permite agregar meses a la comparación y exportar el dashboard a PDF mediante jsPDF; la exportación no aparece en la vista del Técnico.
+- El Gerente también tiene un análisis estocástico del historial con filtros de sede y dispositivo. Las ventanas son el último año (agrupado por mes), el último mes (por día), la última semana (por día), las últimas 24 horas (por hora) y la última hora (por bloques de 5 minutos). Los intervalos vacíos se muestran sin mediciones y las líneas no interpolan datos ausentes; el ancho de banda usa escala logarítmica cuando los valores extremos comprimen el rango. El año se filtra mediante el índice de `fecha_registro` y se resume en unos 12–13 puntos.
+- La pestaña “Anomalías e historial” está disponible para Gerente y Técnico. Gerencia puede crear y editar reportes asociados a una sede o dispositivo; cada edición se registra en el historial. El Técnico actualiza el estado y agrega o edita un comentario por anomalía, que también queda en la auditoría. La bandeja del encabezado notifica a los técnicos cuando Gerencia crea o actualiza reportes y a Gerencia cuando un técnico cambia el estado o comenta. Cada usuario ve su propio contador de notificaciones pendientes y puede marcarlas como leídas. Esta función usa `reporte_anomalia`, `historial_reporte_anomalia`, `comentario_reporte_anomalia` y `notificacion`.
 - La página de soporte contiene formulario de contacto y preguntas frecuentes. Las distribuciones de Chart.js y jsPDF se sirven localmente desde `public/vendor/`, sin depender de CDN.
 - Las consultas de inventario, historial y métricas convierten las filas de MariaDB en instancias de los modelos PHP en `src/Modelos/`.
 

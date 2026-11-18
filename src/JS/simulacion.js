@@ -7,6 +7,11 @@ let errorEstadisticas = '';
 
 document.addEventListener('DOMContentLoaded', iniciar);
 
+function fechaLocalParaInput(fecha = new Date()) {
+    const ajusteZona = fecha.getTimezoneOffset() * 60000;
+    return new Date(fecha.getTime() - ajusteZona).toISOString().slice(0, 16);
+}
+
 async function iniciar() {
     try {
         const respuesta = await fetch('../PHP/obtenerSesion.php', { credentials: 'include' });
@@ -64,7 +69,69 @@ async function iniciar() {
     form.addEventListener('submit', guardarSimulacion);
     $('btnSimularVarias').addEventListener('click', simularVariasVeces);
     $('btnReiniciarHistorial').addEventListener('click', reiniciarHistorial);
+    $('modoFechaSimulacion').addEventListener('change', actualizarModoEscenario);
+    $('rangoFechaSimulacion').addEventListener('change', actualizarModoEscenario);
+    $('escenarioSimulacion').addEventListener('change', actualizarModoEscenario);
+    $('duracionEscenario').addEventListener('change', actualizarOpcionesIntervalo);
     $('btnCerrarSesion').addEventListener('click', cerrarSesion);
+    $('fechaSimulacionManual').value = fechaLocalParaInput();
+    actualizarModoFecha();
+    actualizarModoEscenario();
+}
+
+function actualizarModoFecha() {
+    const modo = $('modoFechaSimulacion').value;
+    const manual = modo === 'manual';
+    const aleatorioPorPeriodo = modo === 'super_automatico';
+    const nombresPeriodo = {
+        hora: 'la última hora',
+        dia: 'las últimas 24 horas',
+        semana: 'la última semana',
+        mes: 'el último mes',
+        anio: 'el último año'
+    };
+    $('campoFechaManual').classList.toggle('hidden', !manual);
+    $('fechaSimulacionManual').disabled = !manual;
+    $('campoRangoFecha').classList.toggle('hidden', !aleatorioPorPeriodo);
+    $('rangoFechaSimulacion').disabled = !aleatorioPorPeriodo;
+    $('ayudaFechaSimulacion').textContent = manual
+        ? 'La fecha elegida se aplicará a todas las mediciones del lote.'
+        : aleatorioPorPeriodo
+            ? `Genera una fecha y hora aleatorias dentro de ${nombresPeriodo[$('rangoFechaSimulacion').value]}.`
+            : 'Conserva el día y la hora observados en el historial y sortea minutos/segundos distintos para cada dispositivo.';
+}
+
+function actualizarModoEscenario() {
+    actualizarModoFecha();
+    const esEscenarioTemporal = $('escenarioSimulacion').value !== 'puntual';
+    $('campoDuracionEscenario').classList.toggle('hidden', !esEscenarioTemporal);
+    $('campoIntervaloEscenario').classList.toggle('hidden', !esEscenarioTemporal);
+    $('duracionEscenario').disabled = !esEscenarioTemporal;
+    $('intervaloEscenario').disabled = !esEscenarioTemporal;
+    $('controlesFechaSimulacion').classList.toggle('hidden', esEscenarioTemporal);
+    $('modoFechaSimulacion').disabled = esEscenarioTemporal;
+    $('fechaSimulacionManual').disabled = esEscenarioTemporal || $('modoFechaSimulacion').value !== 'manual';
+    $('rangoFechaSimulacion').disabled = esEscenarioTemporal || $('modoFechaSimulacion').value !== 'super_automatico';
+    $('btnSimularVarias').classList.toggle('hidden', esEscenarioTemporal);
+    $('campoRepeticiones').classList.toggle('hidden', esEscenarioTemporal);
+    $('btnGuardarSimulacion').textContent = esEscenarioTemporal ? 'Guardar escenario' : 'Guardar simulación';
+    actualizarOpcionesIntervalo();
+    $('ayudaFechaSimulacion').textContent = esEscenarioTemporal
+        ? 'La serie termina en la hora actual de MariaDB y queda guardada en el historial.'
+        : $('ayudaFechaSimulacion').textContent;
+}
+
+function actualizarOpcionesIntervalo() {
+    const duracionSegundos = Number($('duracionEscenario').value) * 60;
+    const opciones = [...$('intervaloEscenario').options];
+    opciones.forEach((opcion) => {
+        opcion.disabled = Number(opcion.value) > duracionSegundos
+            || duracionSegundos % Number(opcion.value) !== 0;
+    });
+    if ($('intervaloEscenario').selectedOptions[0]?.disabled) {
+        const primeraValida = opciones.find((opcion) => !opcion.disabled);
+        if (primeraValida) $('intervaloEscenario').value = primeraValida.value;
+    }
 }
 
 function normalizarRol(rol) {
@@ -126,7 +193,7 @@ function renderizarTabla() {
                         <option value="1" ${conectado ? 'selected' : ''}>Conectado</option>
                         <option value="0" ${conectado ? '' : 'selected'}>Desconectado</option>
                     </select>
-                    <p data-stat="probabilidad" class="mt-1 text-[0.6rem] leading-tight text-slate-500 sm:text-xs">${tieneEstadisticas ? `P(conectado) ${(estadisticas.probabilidad_conectado * 100).toFixed(1)}% · ${etiquetaOrigen(estadisticas.origen)} · n=${estadisticas.total}` : 'Sin estadísticas suficientes'}</p>
+                    <p data-stat="probabilidad" class="mt-1 text-[0.6rem] leading-tight text-slate-500 sm:text-xs">${tieneEstadisticas ? `P(conectado) ${(estadisticas.probabilidad_conectado * 100).toFixed(1)}% · ${etiquetaNivelEstadisticas(estadisticas.origen)} · n=${estadisticas.total}` : 'Sin estadísticas suficientes'}</p>
                 </td>
                 <td class="px-1 py-3 sm:px-2 sm:py-4">
                     <input data-field="latencia" type="number" min="0" max="10000" step="0.1" value="${latencia}" ${modoInicial === 'automatico' ? 'disabled' : ''} aria-label="Latencia en milisegundos para ${escaparHTML(dispositivo.name_dispositivo)}" class="w-full min-w-0 rounded-lg border border-slate-300 ${modoInicial === 'automatico' ? 'bg-slate-100 text-slate-500' : 'bg-white text-slate-800'} px-1 py-2 text-[0.65rem] focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed sm:px-2 sm:text-sm">
@@ -157,7 +224,7 @@ function actualizarEstadisticasVisibles() {
             continue;
         }
 
-        probabilidad.textContent = `P(conectado) ${(estadisticas.probabilidad_conectado * 100).toFixed(2)}% · ${etiquetaOrigen(estadisticas.origen)} · n=${estadisticas.total}`;
+        probabilidad.textContent = `P(conectado) ${(estadisticas.probabilidad_conectado * 100).toFixed(2)}% · ${etiquetaNivelEstadisticas(estadisticas.origen)} · n=${estadisticas.total}`;
         latencia.textContent = `μ ${estadisticas.media_latencia.toFixed(2)} · σ ${estadisticas.desviacion_latencia.toFixed(2)} · n=${estadisticas.n_latencia}`;
         anchoBanda.textContent = `μ ${estadisticas.media_ancho_banda.toFixed(2)} · σ ${estadisticas.desviacion_ancho_banda.toFixed(2)} · n=${estadisticas.n_ancho_banda}`;
     }
@@ -256,12 +323,12 @@ function generarValoresAutomaticos(estadisticas) {
     return muestra;
 }
 
-function etiquetaOrigen(origen) {
+function etiquetaNivelEstadisticas(nivel) {
     return {
         dispositivo: 'dispositivo',
         sede: 'sede',
         global: 'global'
-    }[origen] ?? origen;
+    }[nivel] ?? nivel;
 }
 
 function generarMuestraParaFila(fila) {
@@ -340,16 +407,58 @@ async function guardarSimulacion(evento) {
     mensaje.className = 'text-sm text-slate-600';
     try {
         const payload = construirPayloadSimulacion();
-        await guardarLoteSimulacion(payload);
-        window.location.href = 'Panel%20de%20control.html?sede=todas';
+        if ($('escenarioSimulacion').value === 'puntual') {
+            await guardarLoteSimulacion(payload, obtenerOpcionesFecha());
+            window.location.href = 'Panel%20de%20control.html?sede=todas';
+            return;
+        }
+
+        const resultado = await guardarEscenario(payload);
+        mensaje.textContent = `${resultado.nombre}: se guardaron ${resultado.registros.toLocaleString('es')} mediciones simuladas.`;
+        mensaje.className = 'text-sm font-semibold text-emerald-700';
+        $('linkHistorial').classList.remove('hidden');
     } catch (error) {
         if (error.fila) error.fila.querySelector('[data-field="modo"]')?.focus();
         mensaje.textContent = error.message || 'No se pudo guardar la simulación.';
         mensaje.className = 'text-sm font-semibold text-red-700';
     } finally {
         boton.disabled = false;
-        boton.textContent = 'Guardar simulación';
+        boton.textContent = $('escenarioSimulacion').value === 'puntual'
+            ? 'Guardar simulación'
+            : 'Guardar escenario';
     }
+}
+
+async function guardarEscenario(dispositivosPayload) {
+    const datos = {
+        dispositivos: dispositivosPayload,
+        escenario: $('escenarioSimulacion').value,
+        duracion_minutos: Number($('duracionEscenario').value),
+        intervalo_segundos: Number($('intervaloEscenario').value)
+    };
+    const respuesta = await fetch('../PHP/guardarEscenarioSimulacion.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(datos)
+    });
+    const resultado = await respuesta.json();
+    if (!respuesta.ok || !resultado.success) {
+        throw new Error(resultado.mensaje || 'No se pudo guardar el escenario.');
+    }
+    return resultado;
+}
+
+function obtenerOpcionesFecha() {
+    const modo = $('modoFechaSimulacion').value;
+    if (modo === 'manual' && !$('fechaSimulacionManual').reportValidity()) {
+        throw new Error('Selecciona una fecha y hora válidas para la simulación.');
+    }
+    return {
+        modo_fecha: modo,
+        fecha_registro: modo === 'manual' ? $('fechaSimulacionManual').value : null,
+        rango_fecha: modo === 'super_automatico' ? $('rangoFechaSimulacion').value : null
+    };
 }
 
 function construirPayloadSimulacion({ generarAutomaticos = false } = {}) {
@@ -408,12 +517,12 @@ async function cargarEstadisticasActualizadas() {
     actualizarEstadisticasVisibles();
 }
 
-async function guardarLoteSimulacion(payload) {
+async function guardarLoteSimulacion(payload, opcionesFecha = obtenerOpcionesFecha()) {
     const respuesta = await fetch('../PHP/guardarSimulacion.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ dispositivos: payload })
+        body: JSON.stringify({ dispositivos: payload, ...opcionesFecha })
     });
     const resultado = await respuesta.json();
     if (!respuesta.ok || !resultado.success) {
@@ -473,10 +582,13 @@ async function simularVariasVeces() {
             await cargarEstadisticasActualizadas();
             mensaje.textContent = `Estadísticas actualizadas. Generando tanda ${indice + 1} de ${cantidad}...`;
             const payload = construirPayloadSimulacion({ generarAutomaticos: true });
-            await guardarLoteSimulacion(payload);
+            const resultado = await guardarLoteSimulacion(payload, obtenerOpcionesFecha());
             completadas++;
             boton.textContent = `Simulando ${completadas}/${cantidad}...`;
-            mensaje.textContent = `Tanda ${completadas} de ${cantidad} guardada.`;
+            const cantidadFechas = resultado.fechas_registro?.length || 0;
+            mensaje.textContent = cantidadFechas > 1
+                ? `Tanda ${completadas} de ${cantidad} guardada con ${cantidadFechas} fechas simuladas distintas.`
+                : `Tanda ${completadas} de ${cantidad} guardada con fecha ${resultado.fechas_registro?.[0] || 'actual'}.`;
         }
         await cargarEstadisticasActualizadas();
         mensaje.textContent = `Se guardaron ${completadas} simulaciones para ${filas.length} dispositivos. Volviendo al monitoreo...`;

@@ -13,49 +13,59 @@ if (!isset($_SESSION['id_usuario']) || $rol !== 'Gerente') {
 }
 
 $granularidad = $_GET['granularidad'] ?? 'dia';
-$desde = $_GET['desde'] ?? '';
-$hasta = $_GET['hasta'] ?? '';
 $idSede = $_GET['id_sede'] ?? '';
 $idDispositivo = $_GET['id_dispositivo'] ?? '';
-$expresiones = [
-    'mes' => "DATE_FORMAT(s.fecha_registro, '%Y-%m')",
-    'semana' => "DATE_FORMAT(DATE_SUB(DATE(s.fecha_registro), INTERVAL WEEKDAY(s.fecha_registro) DAY), '%Y-%m-%d')",
-    'dia' => 'DATE(s.fecha_registro)',
-    'hora' => "DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:00')"
+$granularidadesDetalle = [
+    'anio' => 'mes',
+    'mes' => 'dia',
+    'semana' => 'dia',
+    'dia' => 'hora',
+    'hora' => 'minuto'
 ];
-$maxDias = ['hora' => 31, 'dia' => 366, 'semana' => 1096, 'mes' => 1826];
+$expresiones = [
+    'anio' => "DATE_FORMAT(s.fecha_registro, '%Y-%m')",
+    'mes' => 'DATE(s.fecha_registro)',
+    'semana' => 'DATE(s.fecha_registro)',
+    'dia' => "DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:00')",
+    'hora' => "CONCAT(DATE_FORMAT(s.fecha_registro, '%Y-%m-%d %H:'), LPAD(FLOOR(MINUTE(s.fecha_registro) / 5) * 5, 2, '0'))"
+];
+$ventanasSegundos = [
+    'anio' => 365 * 24 * 60 * 60,
+    'mes' => 30 * 24 * 60 * 60,
+    'semana' => 7 * 24 * 60 * 60,
+    'dia' => 24 * 60 * 60,
+    'hora' => 60 * 60
+];
 
-function fechaAnalisisValida(string $fecha): bool
+function inicioPeriodoAnalisis(DateTimeImmutable $fecha, string $granularidad): DateTimeImmutable
 {
-    $objeto = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha);
-    $errores = DateTimeImmutable::getLastErrors();
-    return $objeto !== false
-        && $objeto->format('Y-m-d') === $fecha
-        && ($errores === false || ($errores['warning_count'] === 0 && $errores['error_count'] === 0));
+    return match ($granularidad) {
+        'mes' => $fecha->modify('first day of this month')->setTime(0, 0),
+        'semana' => $fecha->modify('monday this week')->setTime(0, 0),
+        'dia' => $fecha->setTime(0, 0),
+        'hora' => $fecha->setTime((int) $fecha->format('H'), 0),
+        'minuto' => $fecha->setTime(
+            (int) $fecha->format('H'),
+            intdiv((int) $fecha->format('i'), 5) * 5
+        ),
+    };
 }
 
-if (
-    !is_string($granularidad) || !isset($expresiones[$granularidad])
-    || !is_string($desde) || !fechaAnalisisValida($desde)
-    || !is_string($hasta) || !fechaAnalisisValida($hasta)
-) {
+function etiquetaPeriodoAnalisis(DateTimeImmutable $fecha, string $granularidad): string
+{
+    return match ($granularidad) {
+        'mes' => $fecha->format('Y-m'),
+        'hora' => $fecha->format('Y-m-d H:00'),
+        'minuto' => $fecha->format('Y-m-d H:i'),
+        default => $fecha->format('Y-m-d'),
+    };
+}
+
+if (!is_string($granularidad) || !isset($expresiones[$granularidad])) {
     http_response_code(422);
-    echo json_encode(['success' => false, 'mensaje' => 'Selecciona una granularidad y un rango de fechas válidos.']);
+    echo json_encode(['success' => false, 'mensaje' => 'Selecciona una granularidad válida.']);
     exit;
 }
-
-$fechaDesde = new DateTimeImmutable($desde);
-$fechaHasta = new DateTimeImmutable($hasta);
-$diasSeleccionados = (int) $fechaDesde->diff($fechaHasta)->format('%a');
-if ($fechaDesde > $fechaHasta || $diasSeleccionados > $maxDias[$granularidad]) {
-    http_response_code(422);
-    echo json_encode([
-        'success' => false,
-        'mensaje' => "El rango para la vista {$granularidad} no puede superar {$maxDias[$granularidad]} días."
-    ]);
-    exit;
-}
-
 foreach (['idSede' => $idSede, 'idDispositivo' => $idDispositivo] as $valor) {
     if ($valor !== '' && (!is_string($valor) || filter_var($valor, FILTER_VALIDATE_INT) === false || (int) $valor < 1)) {
         http_response_code(422);
@@ -72,6 +82,34 @@ if ($conexionDisponible && !$conexion->set_charset('utf8mb4')) {
     echo json_encode(['success' => false, 'mensaje' => 'No se pudo preparar la codificación del análisis.']);
     exit;
 }
+
+$maxSegundos = $ventanasSegundos[$granularidad];
+if ($conexionDisponible) {
+    $resultadoReloj = $conexion->query('SELECT NOW() AS ahora');
+    $filaReloj = $resultadoReloj ? $resultadoReloj->fetch_assoc() : null;
+    if (!$filaReloj || !is_string($filaReloj['ahora'] ?? null)) {
+        error_log('No se pudo consultar la hora de MariaDB para el análisis de simulaciones: ' . $conexion->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudo determinar el periodo reciente del análisis.']);
+        exit;
+    }
+    $fechaHasta = DateTimeImmutable::createFromFormat(
+        '!Y-m-d H:i:s',
+        $filaReloj['ahora'],
+        new DateTimeZone('UTC')
+    );
+    if (!$fechaHasta) {
+        error_log('MariaDB devolvió una hora no válida para el análisis de simulaciones.');
+        http_response_code(500);
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudo determinar el periodo reciente del análisis.']);
+        exit;
+    }
+} else {
+    $fechaHasta = new DateTimeImmutable();
+}
+$fechaDesde = $fechaHasta->modify("-{$maxSegundos} seconds");
+$desdeSql = $fechaDesde->format('Y-m-d H:i:s');
+$hastaSql = $fechaHasta->format('Y-m-d H:i:s');
 
 $opciones = ['sedes' => [], 'dispositivos' => []];
 $filas = [];
@@ -125,7 +163,7 @@ if ($conexionDisponible) {
                STDDEV_SAMP(CASE WHEN s.conectividad = 1 AND s.ancho_banda > 0 THEN s.ancho_banda END) AS desviacion_ancho_banda
         FROM simulacion s
         INNER JOIN dispositivo d ON d.id_dispositivo = s.id_dispositivo
-        WHERE s.fecha_registro >= ? AND s.fecha_registro < DATE_ADD(?, INTERVAL 1 DAY)
+        WHERE s.fecha_registro >= ? AND s.fecha_registro <= ?
     ";
     if ($idSede !== '') {
         $sql .= ' AND EXISTS (
@@ -148,15 +186,15 @@ if ($conexionDisponible) {
     if ($idSede !== '' && $idDispositivo !== '') {
         $idSedeParametro = (int) $idSede;
         $idDispositivoParametro = (int) $idDispositivo;
-        $stmt->bind_param('ssii', $desde, $hasta, $idSedeParametro, $idDispositivoParametro);
+        $stmt->bind_param('ssii', $desdeSql, $hastaSql, $idSedeParametro, $idDispositivoParametro);
     } elseif ($idSede !== '') {
         $idSedeParametro = (int) $idSede;
-        $stmt->bind_param('ssi', $desde, $hasta, $idSedeParametro);
+        $stmt->bind_param('ssi', $desdeSql, $hastaSql, $idSedeParametro);
     } elseif ($idDispositivo !== '') {
         $idDispositivoParametro = (int) $idDispositivo;
-        $stmt->bind_param('ssi', $desde, $hasta, $idDispositivoParametro);
+        $stmt->bind_param('ssi', $desdeSql, $hastaSql, $idDispositivoParametro);
     } else {
-        $stmt->bind_param('ss', $desde, $hasta);
+        $stmt->bind_param('ss', $desdeSql, $hastaSql);
     }
     if (!$stmt->execute()) {
         error_log('No se pudo calcular el análisis de simulaciones: ' . $stmt->error);
@@ -173,7 +211,7 @@ if ($conexionDisponible) {
     $sqlMuestras = "
         SELECT s.fecha_registro, s.conectividad, s.latencia, s.ancho_banda
         FROM simulacion s
-        WHERE s.fecha_registro >= ? AND s.fecha_registro < DATE_ADD(?, INTERVAL 1 DAY)
+        WHERE s.fecha_registro >= ? AND s.fecha_registro <= ?
     ";
     if ($idSede !== '') {
         $sqlMuestras .= ' AND EXISTS (
@@ -196,15 +234,15 @@ if ($conexionDisponible) {
     if ($idSede !== '' && $idDispositivo !== '') {
         $idSedeParametro = (int) $idSede;
         $idDispositivoParametro = (int) $idDispositivo;
-        $stmtMuestras->bind_param('ssii', $desde, $hasta, $idSedeParametro, $idDispositivoParametro);
+        $stmtMuestras->bind_param('ssii', $desdeSql, $hastaSql, $idSedeParametro, $idDispositivoParametro);
     } elseif ($idSede !== '') {
         $idSedeParametro = (int) $idSede;
-        $stmtMuestras->bind_param('ssi', $desde, $hasta, $idSedeParametro);
+        $stmtMuestras->bind_param('ssi', $desdeSql, $hastaSql, $idSedeParametro);
     } elseif ($idDispositivo !== '') {
         $idDispositivoParametro = (int) $idDispositivo;
-        $stmtMuestras->bind_param('ssi', $desde, $hasta, $idDispositivoParametro);
+        $stmtMuestras->bind_param('ssi', $desdeSql, $hastaSql, $idDispositivoParametro);
     } else {
-        $stmtMuestras->bind_param('ss', $desde, $hasta);
+        $stmtMuestras->bind_param('ss', $desdeSql, $hastaSql);
     }
     if (!$stmtMuestras->execute()) {
         error_log('No se pudo consultar la serie de muestras de simulación: ' . $stmtMuestras->error);
@@ -257,7 +295,7 @@ if ($conexionDisponible) {
         } catch (Throwable) {
             continue;
         }
-        if ($fecha->format('Y-m-d') < $desde || $fecha->format('Y-m-d') > $hasta) {
+        if ($fecha < $fechaDesde || $fecha > $fechaHasta) {
             continue;
         }
         if ($idSede !== '' && $idSedeFila !== (int) $idSede) {
@@ -272,15 +310,11 @@ if ($conexionDisponible) {
             'latencia' => (float) ($fila['latencia'] ?? 0),
             'ancho_banda' => (float) ($fila['ancho_banda'] ?? 0)
         ];
-        if ($granularidad === 'mes') {
-            $periodo = $fecha->format('Y-m');
-        } elseif ($granularidad === 'semana') {
-            $periodo = $fecha->modify('monday this week')->format('Y-m-d');
-        } elseif ($granularidad === 'hora') {
-            $periodo = $fecha->format('Y-m-d H:00');
-        } else {
-            $periodo = $fecha->format('Y-m-d');
-        }
+        $granularidadPeriodo = $granularidadesDetalle[$granularidad];
+        $periodo = etiquetaPeriodoAnalisis(
+            inicioPeriodoAnalisis($fecha, $granularidadPeriodo),
+            $granularidadPeriodo
+        );
         if (!isset($grupos[$periodo])) {
             $grupos[$periodo] = [
                 'periodo' => $periodo, 'total' => 0, 'conectados' => 0,
@@ -327,6 +361,37 @@ if ($conexionDisponible) {
     $muestras = array_slice($muestrasFiltradas, -1000);
 }
 
+$filasPorPeriodo = [];
+foreach ($filas as $fila) {
+    $filasPorPeriodo[$fila['periodo']] = $fila;
+}
+$filas = [];
+$granularidadPeriodo = $granularidadesDetalle[$granularidad];
+$cursorPeriodo = inicioPeriodoAnalisis($fechaDesde, $granularidadPeriodo);
+$ultimoPeriodo = inicioPeriodoAnalisis($fechaHasta, $granularidadPeriodo);
+while ($cursorPeriodo <= $ultimoPeriodo) {
+    $clavePeriodo = etiquetaPeriodoAnalisis($cursorPeriodo, $granularidadPeriodo);
+    $filas[] = $filasPorPeriodo[$clavePeriodo] ?? [
+        'periodo' => $clavePeriodo,
+        'total' => 0,
+        'conectados' => 0,
+        'automaticos' => 0,
+        'manuales' => 0,
+        'n_latencia' => 0,
+        'media_latencia' => null,
+        'desviacion_latencia' => null,
+        'n_ancho_banda' => 0,
+        'media_ancho_banda' => null,
+        'desviacion_ancho_banda' => null
+    ];
+    $cursorPeriodo = match ($granularidadPeriodo) {
+        'mes' => $cursorPeriodo->modify('+1 month'),
+        'dia' => $cursorPeriodo->modify('+1 day'),
+        'hora' => $cursorPeriodo->modify('+1 hour'),
+        'minuto' => $cursorPeriodo->modify('+5 minutes'),
+    };
+}
+
 $periodos = array_map(static function (array $fila): array {
     $total = (int) $fila['total'];
     $conectados = (int) $fila['conectados'];
@@ -334,7 +399,7 @@ $periodos = array_map(static function (array $fila): array {
         'periodo' => $fila['periodo'],
         'total' => $total,
         'conectados' => $conectados,
-        'probabilidad_conectado' => $total ? $conectados / $total : 0,
+        'probabilidad_conectado' => $total ? $conectados / $total : null,
         'automaticos' => (int) $fila['automaticos'],
         'manuales' => (int) $fila['manuales'],
         'n_latencia' => (int) $fila['n_latencia'],
@@ -351,8 +416,9 @@ echo json_encode([
     'success' => true,
     'origen' => $origen,
     'granularidad' => $granularidad,
-    'desde' => $desde,
-    'hasta' => $hasta,
+    'granularidad_intervalo' => $granularidadPeriodo,
+    'desde' => $desdeSql,
+    'hasta' => $hastaSql,
     'opciones' => $opciones,
     'periodos' => $periodos,
     'muestras' => $muestras,

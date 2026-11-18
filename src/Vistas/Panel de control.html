@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centinel - Panel de Control</title>
     <link rel="icon" type="image/png" href="../assets/Logo%20Centinel.png">
-    <link rel="stylesheet" href="../CSS/output.css?v=1.4">
+    <link rel="stylesheet" href="../CSS/output.css?v=1.5">
 </head>
 
 <body class="min-h-screen flex flex-col justify-between bg-gray-100 text-gray-800">
@@ -24,6 +24,7 @@
                         <img id="headerAvatarImg" src="../assets/avatar_gerente.svg" alt="Avatar" class="w-8 h-8 rounded-full border border-gray-600 object-cover shadow-sm">
                         <span id="headerUserName" class="text-gray-200 text-sm">Usuario</span>
                     </li>
+                    <li id="notificacionesRoot"></li>
                     <li>
                         <a href="../../index.html" id="btnCerrarSesion" class="text-gray-300 hover:text-white transition">Cerrar Sesión</a>
                     </li>
@@ -331,6 +332,7 @@
 
     <!-- Script de control dinámico del panel -->
     <script type="module" src="../JS/panelControl.js?v=1.7"></script>
+    <script type="module" src="../JS/notificaciones.js?v=1.0"></script>
 </body>
 
 </html>

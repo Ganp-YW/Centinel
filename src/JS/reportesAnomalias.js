@@ -12,6 +12,7 @@ const etiquetas = {
     tipo_error: 'Tipo de error',
     titulo: 'Título',
     detalles: 'Detalles',
+    comentario: 'Comentario / inconveniente',
     prioridad: 'Prioridad',
     estado: 'Estado',
     fecha_evento: 'Fecha y hora del evento'
@@ -129,7 +130,9 @@ function renderizarHistorial(historial) {
             ? 'Reporte creado'
             : evento.accion === 'cambio_estado'
                 ? 'Estado actualizado por el técnico'
-                : 'Reporte editado';
+                : evento.accion === 'comentario'
+                    ? 'Comentario del técnico'
+                    : 'Reporte editado';
         return `<li class="border-l-2 border-sky-200 pl-4">
             <p class="font-semibold text-slate-800">${accion}</p>
             <p class="mt-1 text-xs text-slate-500">${formatoFecha(evento.fecha_cambio)} · ${escaparHTML(evento.nombre_usuario)}</p>
@@ -174,6 +177,21 @@ function renderizarReportes() {
                 </select>
                 <button type="button" data-estado-id="${reporte.id_reporte}" class="rounded-lg border border-sky-200 px-3 py-2 text-xs font-bold text-sky-800 hover:bg-sky-50">Guardar estado</button>
             </div>`;
+        const comentarios = (reporte.comentarios || []).length
+            ? reporte.comentarios.map((comentario) => `<li class="rounded-lg bg-slate-50 p-3">
+                <p class="whitespace-pre-wrap break-words text-sm text-slate-700">${escaparHTML(comentario.comentario)}</p>
+                <p class="mt-1 text-xs text-slate-500">${escaparHTML(comentario.nombre_usuario)} · ${formatoFecha(comentario.fecha_actualizacion)}</p>
+            </li>`).join('')
+            : '<li class="text-sm text-slate-500">Aún no hay comentarios.</li>';
+        const formularioComentario = rolActual === 'Técnico'
+            ? `<div class="mt-3">
+                <label for="comentarioTecnico${reporte.id_reporte}" class="text-sm font-semibold text-slate-700">${reporte.mi_comentario ? 'Editar tu comentario / inconveniente' : 'Agregar comentario / inconveniente'}</label>
+                <textarea id="comentarioTecnico${reporte.id_reporte}" data-comentario-reporte="${reporte.id_reporte}" maxlength="5000" required rows="3"
+                    class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                    placeholder="Describe qué revisaste, el inconveniente encontrado o la solución aplicada.">${escaparHTML(reporte.mi_comentario)}</textarea>
+                <button type="button" data-comentario-id="${reporte.id_reporte}" class="mt-2 rounded-lg border border-sky-200 px-3 py-2 text-xs font-bold text-sky-800 hover:bg-sky-50">${reporte.mi_comentario ? 'Guardar comentario' : 'Agregar comentario'}</button>
+            </div>`
+            : '';
         return `<article class="p-5 sm:p-6">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="min-w-0 flex-1">
@@ -186,6 +204,11 @@ function renderizarReportes() {
                     <p class="mt-1 text-sm font-semibold text-slate-700">${escaparHTML(objetivo)} · ${reporte.tipo_objetivo === 'dispositivo' ? 'Dispositivo' : 'Sede'}</p>
                     <p class="mt-1 text-xs text-slate-500">Evento: ${formatoFecha(reporte.fecha_evento)} · Creado por ${escaparHTML(reporte.nombre_creador)} · Actualizado: ${formatoFecha(reporte.fecha_actualizacion)}</p>
                     <p class="mt-3 whitespace-pre-wrap break-words text-sm text-slate-600">${escaparHTML(reporte.detalles)}</p>
+                    <section class="mt-5 border-t border-slate-100 pt-4">
+                        <h5 class="text-sm font-bold text-slate-800">Comentarios e inconvenientes (${(reporte.comentarios || []).length})</h5>
+                        <ul class="mt-3 space-y-2">${comentarios}</ul>
+                        ${formularioComentario}
+                    </section>
                 </div>
                 <div class="shrink-0">${controles}</div>
             </div>
@@ -206,6 +229,11 @@ function gestionarAccionLista(evento) {
     const botonEstado = evento.target.closest('[data-estado-id]');
     if (botonEstado && rolActual === 'Técnico') {
         actualizarEstado(Number(botonEstado.dataset.estadoId));
+        return;
+    }
+    const botonComentario = evento.target.closest('[data-comentario-id]');
+    if (botonComentario && rolActual === 'Técnico') {
+        guardarComentario(Number(botonComentario.dataset.comentarioId), botonComentario);
     }
 }
 
@@ -266,6 +294,17 @@ async function guardarReporte(evento) {
 async function actualizarEstado(id) {
     const estado = $(`estadoTecnico${id}`).value;
     await enviarCambios({ accion: 'estado', id_reporte: id, estado });
+}
+
+async function guardarComentario(id, boton) {
+    const campo = $(`comentarioTecnico${id}`);
+    if (!campo.reportValidity()) return;
+    boton.disabled = true;
+    try {
+        await enviarCambios({ accion: 'comentario', id_reporte: id, comentario: campo.value });
+    } finally {
+        boton.disabled = false;
+    }
 }
 
 async function enviarCambios(payload) {

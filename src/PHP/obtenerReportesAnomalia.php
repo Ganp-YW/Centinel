@@ -6,7 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $rol = $_SESSION['type'] ?? '';
-if (!isset($_SESSION['id_usuario']) || !in_array($rol, ['Gerente', 'Tecnico', 'Técnico'], true)) {
+$idUsuario = filter_var($_SESSION['id_usuario'] ?? null, FILTER_VALIDATE_INT);
+if ($idUsuario === false || $idUsuario === null || !in_array($rol, ['Gerente', 'Tecnico', 'Técnico'], true)) {
     http_response_code(isset($_SESSION['id_usuario']) ? 403 : 401);
     echo json_encode(['success' => false, 'mensaje' => 'Se requiere una sesión de Gerente o Técnico.']);
     exit;
@@ -58,6 +59,8 @@ while ($fila = $resultado->fetch_assoc()) {
         ?: ($fila['dispositivo_actual'] ?? $fila['sede_actual'] ?? 'Objetivo eliminado');
     $fila['ip_objetivo'] = $fila['ip_objetivo'] ?: $fila['ip_actual'];
     $fila['historial'] = [];
+    $fila['comentarios'] = [];
+    $fila['mi_comentario'] = '';
     $ids[] = $fila['id_reporte'];
     $reportes[$fila['id_reporte']] = $fila;
 }
@@ -109,6 +112,52 @@ if ($ids) {
         $reportes[(int) $evento['id_reporte']]['historial'][] = $evento;
     }
     $stmtHistorial->close();
+
+    $stmtComentarios = $conexion->prepare(
+        "SELECT c.id_reporte, c.id_usuario, c.comentario, c.fecha_actualizacion, u.name_usu AS nombre_usuario
+         FROM comentario_reporte_anomalia c
+         INNER JOIN usuario u ON u.id_usuario = c.id_usuario
+         WHERE c.id_reporte IN ({$marcadores})
+         ORDER BY c.fecha_actualizacion ASC, c.id_comentario ASC"
+    );
+    if (!$stmtComentarios) {
+        error_log('No se pudieron preparar los comentarios de reportes: ' . $conexion->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudieron cargar los comentarios de las anomalías.']);
+        exit;
+    }
+
+    $parametrosComentarios = [$tipos];
+    foreach ($ids as &$id) {
+        $parametrosComentarios[] = &$id;
+    }
+    unset($id);
+    if (!call_user_func_array([$stmtComentarios, 'bind_param'], $parametrosComentarios)) {
+        error_log('No se pudieron asociar los reportes a la consulta de comentarios.');
+        http_response_code(500);
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudieron preparar los comentarios de anomalías.']);
+        exit;
+    }
+    if (!$stmtComentarios->execute()) {
+        error_log('No se pudieron cargar los comentarios de reportes: ' . $stmtComentarios->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudieron cargar los comentarios de las anomalías.']);
+        exit;
+    }
+
+    $comentarios = $stmtComentarios->get_result();
+    while ($comentario = $comentarios->fetch_assoc()) {
+        $comentario['id_usuario'] = (int) $comentario['id_usuario'];
+        $idReporteComentario = (int) $comentario['id_reporte'];
+        if (!isset($reportes[$idReporteComentario])) {
+            continue;
+        }
+        $reportes[$idReporteComentario]['comentarios'][] = $comentario;
+        if ($comentario['id_usuario'] === $idUsuario) {
+            $reportes[$idReporteComentario]['mi_comentario'] = $comentario['comentario'];
+        }
+    }
+    $stmtComentarios->close();
 }
 
 $resultadoSedes = $conexion->query('SELECT id_sede, name_sede FROM sede ORDER BY name_sede');

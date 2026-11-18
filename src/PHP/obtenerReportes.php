@@ -33,6 +33,8 @@ if (empty($mesesSolicitados)) {
 }
 
 $usoBD = false;
+$conexionBD = false;
+$errorBD = false;
 $datosRespuesta = [];
 
 try {
@@ -43,6 +45,7 @@ try {
 
     if (isset($conexion) && $conexion instanceof mysqli && !$conexion->connect_error) {
         require_once __DIR__ . '/../Modelos/Reporte.php';
+        $conexionBD = true;
         foreach ($mesesSolicitados as $mes) {
             $reportesMes = Reporte::obtenerPorMes(
                 $conexion,
@@ -50,31 +53,28 @@ try {
                 $sedeFiltro,
                 $mes
             );
-            if (count($reportesMes) > 0) {
-                $usoBD = true;
-                $labels         = [];
-                $disponibilidad = [];
-                $latenciaP      = [];
-                $consumoT       = [];
+            $usoBD = $usoBD || count($reportesMes) > 0;
+            $labels         = [];
+            $disponibilidad = [];
+            $latenciaP      = [];
+            $consumoT       = [];
 
-                foreach ($reportesMes as $reporte) {
-                    $fila = $reporte->toArray();
-                    $labels[]         = $fila['etiqueta'];
-                    $disponibilidad[] = $fila['disponibilidad'];
-                    $latenciaP[]      = $fila['latencia_promedio'];
-                    $consumoT[]       = $fila['consumo_total'];
-                }
-
-                $datosRespuesta[$mes] = [
-                    'labels'           => $labels,
-                    'disponibilidad'   => $disponibilidad,
-                    'latencia_promedio' => $latenciaP,
-                    'consumo_total'    => $consumoT
-                ];
+            foreach ($reportesMes as $reporte) {
+                $fila = $reporte->toArray();
+                $labels[]         = $fila['etiqueta'];
+                $disponibilidad[] = $fila['disponibilidad'];
+                $latenciaP[]      = $fila['latencia_promedio'];
+                $consumoT[]       = $fila['consumo_total'];
             }
+
+            $datosRespuesta[$mes] = [
+                'labels'           => $labels,
+                'disponibilidad'   => $disponibilidad,
+                'latencia_promedio' => $latenciaP,
+                'consumo_total'    => $consumoT
+            ];
         }
 
-        // Si la BD funcionó y hay datos, responder
         if ($usoBD && count($datosRespuesta) === count($mesesSolicitados)) {
             echo json_encode([
                 'success' => true,
@@ -88,6 +88,7 @@ try {
     }
 } catch (Throwable $e) {
     error_log('No se pudo consultar el reporte desde la base de datos: ' . $e->getMessage());
+    $errorBD = true;
 }
 
 // ─── DATOS MOCK REALISTAS ────────────────────────────────────────────────────

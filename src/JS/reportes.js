@@ -90,26 +90,37 @@ function seleccionarPestana(nombre) {
     $('tabAnomalias').classList.toggle('text-slate-500', esDashboard);
 }
 
-function fechaLocal(fecha) {
+const ventanasAnalisisMs = {
+    anio: 365 * 24 * 60 * 60 * 1000,
+    mes: 30 * 24 * 60 * 60 * 1000,
+    semana: 7 * 24 * 60 * 60 * 1000,
+    dia: 24 * 60 * 60 * 1000,
+    hora: 60 * 60 * 1000
+};
+
+function fechaHoraLocal(fecha) {
     const anio = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
     const dia = String(fecha.getDate()).padStart(2, '0');
-    return `${anio}-${mes}-${dia}`;
+    const hora = String(fecha.getHours()).padStart(2, '0');
+    const minuto = String(fecha.getMinutes()).padStart(2, '0');
+    const segundo = String(fecha.getSeconds()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}T${hora}:${minuto}:${segundo}`;
 }
 
 function establecerRangoAnalisis() {
-    const hoy = new Date();
-    const desde = new Date(hoy);
+    const ahora = new Date();
+    ahora.setMilliseconds(0);
     const granularidad = $('granularidadAnalisis').value;
-    if (granularidad === 'mes') {
-        desde.setMonth(desde.getMonth() - 11);
-        desde.setDate(1);
+    const inicioVentana = new Date(ahora.getTime() - ventanasAnalisisMs[granularidad]);
+    const desde = fechaHoraLocal(inicioVentana);
+    const hasta = fechaHoraLocal(ahora);
+    for (const campo of [$('desdeAnalisis'), $('hastaAnalisis')]) {
+        campo.min = desde;
+        campo.max = hasta;
     }
-    else if (granularidad === 'semana') desde.setDate(desde.getDate() - 83);
-    else if (granularidad === 'dia') desde.setDate(desde.getDate() - 29);
-    else if (granularidad === 'hora') desde.setDate(desde.getDate() - 1);
-    $('desdeAnalisis').value = fechaLocal(desde);
-    $('hastaAnalisis').value = fechaLocal(hoy);
+    $('desdeAnalisis').value = desde;
+    $('hastaAnalisis').value = hasta;
 }
 
 function inicializarAnalisis() {
@@ -126,22 +137,16 @@ function inicializarAnalisis() {
         cargarAnalisis();
     });
     $('sedeAnalisis').addEventListener('change', filtrarDispositivosAnalisis);
-    $('btnActualizarAnalisis').addEventListener('click', cargarAnalisis);
+    $('btnActualizarAnalisis').addEventListener('click', () => {
+        establecerRangoAnalisis();
+        cargarAnalisis();
+    });
     cargarAnalisis();
 }
 
 async function cargarAnalisis() {
-    const desde = $('desdeAnalisis').value;
-    const hasta = $('hastaAnalisis').value;
-    if (!desde || !hasta || desde > hasta) {
-        $('mensajeAnalisis').textContent = 'Selecciona un rango de fechas válido.';
-        $('mensajeAnalisis').className = 'text-sm font-semibold text-red-700';
-        return;
-    }
     const parametros = new URLSearchParams({
         granularidad: $('granularidadAnalisis').value,
-        desde,
-        hasta,
         id_sede: $('sedeAnalisis').value,
         id_dispositivo: $('dispositivoAnalisis').value
     });
@@ -163,15 +168,18 @@ async function cargarAnalisis() {
         if (!respuesta.ok || !datos.success) {
             throw new Error(datos.mensaje || 'No se pudo calcular el análisis.');
         }
+        $('desdeAnalisis').value = datos.desde.replace(' ', 'T');
+        $('hastaAnalisis').value = datos.hasta.replace(' ', 'T');
         actualizarOpcionesAnalisis(datos.opciones);
         actualizarResumenAnalisis(datos.periodos);
-        actualizarGraficosAnalisis(datos.periodos, datos.muestras || []);
+        actualizarGraficosAnalisis(datos.periodos, datos.muestras || [], datos.granularidad_intervalo);
         const origen = datos.origen === 'memoria' ? 'memoria de esta sesión; no está guardado en la base de datos' : 'base de datos';
-        const detalleSerie = datos.periodos.length === 1
+        const totalMediciones = datos.periodos.reduce((total, periodo) => total + periodo.total, 0);
+        const detalleSerie = totalMediciones && datos.periodos.length === 1
             ? ` · ${datos.muestras.length} mediciones graficadas en orden cronológico${datos.muestras_limitadas ? ' (máximo 1000)' : ''}`
             : '';
-        $('mensajeAnalisis').textContent = datos.periodos.length
-            ? `${datos.periodos.length} intervalos${detalleSerie} · datos de ${origen}.`
+        $('mensajeAnalisis').textContent = totalMediciones
+            ? `${datos.periodos.length} intervalos${detalleSerie} · mediciones de ${origen}.`
             : `No hay mediciones para estos filtros y fechas · origen: ${origen}.`;
         $('mensajeAnalisis').className = `text-sm ${datos.origen === 'memoria' ? 'text-amber-700' : 'text-emerald-700'}`;
     } catch (error) {
@@ -197,6 +205,7 @@ function actualizarOpcionesAnalisis(opciones = {}) {
     if ([...$('dispositivoAnalisis').options].some((opcion) => opcion.value === dispositivoActual)) {
         $('dispositivoAnalisis').value = dispositivoActual;
     }
+
 }
 
 function filtrarDispositivosAnalisis() {
@@ -224,24 +233,26 @@ function actualizarResumenAnalisis(periodos) {
     $('manualesAnalisis').textContent = periodos.reduce((suma, periodo) => suma + periodo.manuales, 0).toLocaleString('es');
 }
 
-function actualizarGraficosAnalisis(periodos, muestras) {
+function actualizarGraficosAnalisis(periodos, muestras, granularidadIntervalo) {
     const usarSerieMuestras = periodos.length === 1 && muestras.length > 0;
     const puntos = usarSerieMuestras ? crearIntervalosGraficos(muestras) : periodos;
     const etiquetas = usarSerieMuestras ? puntos.map((punto) => punto.etiqueta) : puntos.map((punto) => punto.periodo);
+    const etiquetasGranularidad = { mes: 'mes', dia: 'día', hora: 'hora', minuto: '5 minutos' };
     const textoPeriodo = usarSerieMuestras
         ? 'Por bloque cronológico de mediciones'
-        : 'Por intervalo seleccionado';
+        : `Por intervalo de ${etiquetasGranularidad[granularidadIntervalo] || 'tiempo'}`;
 
     $('graficoProbabilidadAnalisis').parentElement.parentElement.querySelector('p').textContent =
         `${textoPeriodo}: barras con la proporción real y línea Beta suavizada en ventanas de 3 bloques.`;
     $('graficoLatenciaAnalisis').parentElement.parentElement.querySelector('p').textContent =
-        `${textoPeriodo}: media por bloque y mediana móvil; los huecos breves estimados no son mediciones.`;
+        `${textoPeriodo}: media por bloque y mediana móvil; los periodos sin datos quedan vacíos.`;
     $('graficoAnchoBandaAnalisis').parentElement.parentElement.querySelector('p').textContent =
-        `${textoPeriodo}: media por bloque y mediana móvil; escala logarítmica si hay valores extremos.`;
+        `${textoPeriodo}: media por bloque y mediana móvil; los periodos sin datos quedan vacíos.`;
 
     const nConectividad = puntos.map((punto) => punto.total ?? punto.n ?? 0);
     const conectados = puntos.map((punto) => punto.conectados ?? 0);
     const probabilidadSuavizada = puntos.map((_, indice) => {
+        if (!nConectividad[indice]) return null;
         const inicio = Math.max(0, indice - 1);
         const fin = Math.min(puntos.length - 1, indice + 1);
         const exitos = conectados.slice(inicio, fin + 1).reduce((suma, cantidad) => suma + cantidad, 0);
@@ -254,7 +265,9 @@ function actualizarGraficosAnalisis(periodos, muestras) {
             labels: etiquetas,
             datasets: [{
                 label: 'Probabilidad observada de conexión (%)',
-                data: puntos.map((punto) => 100 * (punto.probabilidad_conectado ?? punto.probabilidad)),
+                data: puntos.map((punto) => punto.total === 0
+                    ? null
+                    : 100 * (punto.probabilidad_conectado ?? punto.probabilidad)),
                 backgroundColor: 'rgba(5, 150, 105, 0.72)',
                 borderColor: '#047857',
                 borderWidth: 1,
@@ -357,9 +370,7 @@ function crearGraficoSerieVariable(clave, canvasId, etiquetas, puntos, campoMedi
         }
         const anterior = observados[indice - 1];
         const siguiente = observados[indice + 1];
-        return Number.isFinite(anterior) && anterior > 0 && Number.isFinite(siguiente) && siguiente > 0
-            ? (anterior + siguiente) / 2
-            : null;
+        return null;
     });
     const positivos = observados.filter((valor) => Number.isFinite(valor) && valor > 0).sort((a, b) => a - b);
     const mediana = positivos.length ? positivos[Math.floor(positivos.length / 2)] : 0;

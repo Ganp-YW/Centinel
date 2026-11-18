@@ -34,7 +34,7 @@ $sql = "
            STDDEV_SAMP(CASE WHEN s.conectividad = 1 AND s.ancho_banda > 0 THEN s.ancho_banda END) AS desviacion_ancho_banda
     FROM dispositivo d
     LEFT JOIN sede_dispositivo sd ON sd.id_dispositivo = d.id_dispositivo
-    LEFT JOIN simulacion s ON s.id_dispositivo = d.id_dispositivo
+    LEFT JOIN simulacion s ON s.id_dispositivo = d.id_dispositivo AND s.indice_paso IS NULL
     GROUP BY d.id_dispositivo
 
     UNION ALL
@@ -50,6 +50,7 @@ $sql = "
            STDDEV_SAMP(CASE WHEN s.conectividad = 1 AND s.ancho_banda > 0 THEN s.ancho_banda END) AS desviacion_ancho_banda
     FROM simulacion s
     INNER JOIN sede_dispositivo sd ON sd.id_dispositivo = s.id_dispositivo
+    WHERE s.indice_paso IS NULL
     GROUP BY sd.id_sede
 
     UNION ALL
@@ -64,6 +65,7 @@ $sql = "
            AVG(CASE WHEN s.conectividad = 1 AND s.ancho_banda > 0 THEN s.ancho_banda END) AS media_ancho_banda,
            STDDEV_SAMP(CASE WHEN s.conectividad = 1 AND s.ancho_banda > 0 THEN s.ancho_banda END) AS desviacion_ancho_banda
     FROM simulacion s
+    WHERE s.indice_paso IS NULL
 ";
 
 $resultado = $conexion->query($sql);
@@ -90,7 +92,8 @@ while ($fila = $resultado->fetch_assoc()) {
     ];
 
     if ($fila['nivel'] === 'dispositivo') {
-        $porDispositivo[(int) $fila['referencia']] = [
+        $idDispositivo = (int) $fila['referencia'];
+        $porDispositivo[$idDispositivo] = [
             'id_sede' => (int) $fila['id_sede'],
             'estadistica' => $estadistica
         ];
@@ -109,7 +112,6 @@ foreach ($porDispositivo as $idDispositivo => $datosDispositivo) {
         ['nivel' => 'sede', 'datos' => $porSede[$datosDispositivo['id_sede']] ?? null],
         ['nivel' => 'global', 'datos' => $global]
     ];
-
     foreach ($candidatos as $candidato) {
         $datos = $candidato['datos'];
         if (

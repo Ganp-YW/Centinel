@@ -1,5 +1,11 @@
 const $ = (id) => document.getElementById(id);
 const POR_PAGINA = 25;
+const etiquetasEscenario = {
+    caida: 'Caída de conectividad',
+    latencia: 'Latencia elevada',
+    congestion: 'Congestión de red',
+    recuperacion: 'Recuperación gradual'
+};
 let pagina = 1;
 let solicitud = null;
 
@@ -103,6 +109,7 @@ async function cargarHistorial() {
     try {
         const respuesta = await fetch(`../PHP/obtenerHistorialSimulaciones.php?${parametros}`, {
             credentials: 'include',
+            cache: 'no-store',
             signal: solicitud.signal
         });
         const datos = await respuesta.json();
@@ -142,6 +149,7 @@ function renderizarFilas(simulaciones) {
             : '<span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Desconectado</span>';
         const modo = simulacion.modo === 'manual' ? 'Manual' : 'Automático';
         const identificador = simulacion.id_simulacion ? `#${simulacion.id_simulacion}` : 'Demo';
+        const detalleEscenario = simulacion.nombre_escenario || etiquetasEscenario[simulacion.escenario] || 'Medición puntual';
         return `<tr class="transition hover:bg-slate-50">
             <td class="whitespace-nowrap px-5 py-4 text-slate-600">${formatoFecha(simulacion.fecha_registro)}</td>
             <td class="px-4 py-4">
@@ -153,7 +161,10 @@ function renderizarFilas(simulaciones) {
             <td class="px-4 py-4 font-medium text-slate-700">${Number(simulacion.latencia).toFixed(1)} ms</td>
             <td class="px-4 py-4 font-medium text-slate-700">${Number(simulacion.ancho_banda).toFixed(1)} Mbps</td>
             <td class="px-4 py-4"><span class="rounded-full ${simulacion.modo === 'manual' ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700'} px-2.5 py-1 text-xs font-semibold">${modo}</span></td>
-            <td class="px-4 py-4 font-mono text-xs text-slate-500">${identificador}</td>
+            <td class="px-4 py-4">
+                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">${escaparHTML(detalleEscenario)}</span>
+                <p class="mt-1 font-mono text-xs text-slate-500">${identificador}</p>
+            </td>
         </tr>`;
     }).join('');
 }
